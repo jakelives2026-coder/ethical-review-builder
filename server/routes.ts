@@ -726,11 +726,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Missing required fields" });
       }
       
+      // Sanitize answers: strip control characters and cap each at 500 characters
+      const sanitize = (val: unknown): string =>
+        String(val ?? "").replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, 500);
+      const sanitizedAnswers = answers.map(sanitize);
+
       // Extract meeting location if provided (first answer for certain appointment types)
-      const hasMeetingLocation = answers.length === 4 && 
+      const hasMeetingLocation = sanitizedAnswers.length === 4 &&
         ["appointment-after-no-purchase", "appointment-after-purchase", "appointment-after-purchase-not-started"].includes(relationshipType);
-      const meetingLocation = hasMeetingLocation ? answers[0] : null;
-      const experienceAnswers = hasMeetingLocation ? answers.slice(1) : answers;
+      const meetingLocation = hasMeetingLocation ? sanitizedAnswers[0] : null;
+      const experienceAnswers = hasMeetingLocation ? sanitizedAnswers.slice(1) : sanitizedAnswers;
       
       // Super reviews are premium features - check if authenticated and on premium plan
       if (isSuperReview && req.isAuthenticated() && req.legacyUser!.planType === 'free') {
