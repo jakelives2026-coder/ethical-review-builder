@@ -59,6 +59,8 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
     generatedReview: ""
   };
 
+  const SESSION_KEY = "reviewBuilder_state";
+
   const [currentStep, setCurrentStep] = useState<Step>(Step.Welcome);
   const [formData, setFormData] = useState<ReviewData>(initialState);
   const [reviewReady, setReviewReady] = useState(false);
@@ -71,12 +73,30 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
   // Determine if business info is pre-filled (for public review pages)
   const hasPrefillData = !!(prefillData?.businessName && prefillData?.businessLocation && prefillData?.businessService);
   
-  // Reset state when component mounts
+  // Persist step and form data to sessionStorage on every change
   useEffect(() => {
-    // Reset to initial state when component loads
+    if (currentStep === Step.Welcome) return;
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ step: currentStep, formData }));
+  }, [currentStep, formData]);
+
+  // Restore from sessionStorage on mount, falling back to default initialisation
+  useEffect(() => {
+    if (!hasPrefillData) {
+      try {
+        const raw = sessionStorage.getItem(SESSION_KEY);
+        if (raw) {
+          const { step, formData: savedData } = JSON.parse(raw) as { step: Step; formData: ReviewData };
+          setFormData(savedData);
+          setCurrentStep(step);
+          setVisibleStep(step);
+          return;
+        }
+      } catch {
+        sessionStorage.removeItem(SESSION_KEY);
+      }
+    }
+
     setFormData(initialState);
-    
-    // If we have prefilled business type, skip to relationship screen
     if (prefillData?.businessType) {
       setCurrentStep(Step.Relationship);
       setVisibleStep(Step.Relationship);
@@ -316,6 +336,7 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
   
   // Start over
   const handleStartOver = () => {
+    sessionStorage.removeItem(SESSION_KEY);
     setFormData({
       businessType: null,
       relationship: null,
