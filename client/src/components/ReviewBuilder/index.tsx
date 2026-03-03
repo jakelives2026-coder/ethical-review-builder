@@ -61,6 +61,7 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
 
   const [currentStep, setCurrentStep] = useState<Step>(Step.Welcome);
   const [formData, setFormData] = useState<ReviewData>(initialState);
+  const [reviewReady, setReviewReady] = useState(false);
   const { toast } = useToast();
 
   // Animation classes
@@ -85,6 +86,13 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
     }
   }, []);
   
+  // Start the API call as soon as the Generating screen mounts
+  useEffect(() => {
+    if (visibleStep !== Step.Generating) return;
+    setReviewReady(false);
+    generateReview();
+  }, [visibleStep]);
+
   const goToStep = (step: Step) => {
     setAnimationClass("slide-out");
     
@@ -255,11 +263,9 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
   };
   
   // Generate (or regenerate) the review. Pass a name to include it and advance to Complete;
-  // omit it for the initial generation, which advances to Preview.
+  // omit it for the initial generation — reviewReady signals the animation to proceed to Preview.
   const generateReview = async (name?: string) => {
     if (!formData.relationship) return;
-
-    const nextStep = name !== undefined ? Step.Complete : Step.Preview;
 
     try {
       const response = await apiRequest("POST", "/api/generate-review", {
@@ -277,7 +283,11 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
       const data = await response.json();
 
       setFormData(prev => ({ ...prev, generatedReview: data.review }));
-      goToStep(nextStep);
+      if (name !== undefined) {
+        goToStep(Step.Complete);
+      } else {
+        setReviewReady(true);
+      }
     } catch (error) {
       console.error("Error generating review:", error);
       toast({
@@ -286,14 +296,15 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
         variant: "destructive"
       });
 
-      if (nextStep === Step.Preview) {
+      if (name !== undefined) {
+        goToStep(Step.Complete);
+      } else {
         setFormData(prev => ({
           ...prev,
           generatedReview: "A placeholder review until the API is connected."
         }));
+        setReviewReady(true);
       }
-
-      goToStep(nextStep);
     }
   };
 
@@ -327,6 +338,7 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
       userName: "",
       generatedReview: ""
     });
+    setReviewReady(false);
     goToStep(Step.Welcome);
   };
 
@@ -434,7 +446,8 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
 
         {visibleStep === Step.Generating && (
           <ReviewGeneration
-            onComplete={() => generateReview()}
+            apiReady={reviewReady}
+            onComplete={() => goToStep(Step.Preview)}
             businessInfo={formData.businessInfo}
           />
         )}
