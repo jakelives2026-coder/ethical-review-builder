@@ -1,0 +1,76 @@
+🧭 The Two New Scenarios:
+✅ Appointment → Sale → Job Not Started Yet
+
+The customer made the decision and purchased, but installation/service hasn’t begun
+
+We want to capture their confidence in the process, rep, and setup
+
+✅ Appointment → Sale → Job Completed
+
+This is the final full-service review, routed to the existing Customer Flow
+
+✅ Recommended Flow Update
+After the user selects:
+
+"I had the appointment and became a customer"
+
+We add a second clarifying screen:
+
+📍 New Follow-Up Screen: Job Status
+Prompt:
+"Has the work been completed yet?"
+
+Options (radio):
+
+“No — it hasn’t started yet”
+
+“No — it’s in progress” (optional)
+
+“Yes — the job is complete”
+
+Resulting Routes:
+Selection	Route To
+Hasn’t started yet	➡️ “Pre-Install Review Flow” (NEW)
+In progress (optional)	➡️ Same as above or a variation if needed later
+Job completed	➡️ Existing Customer Flow ✅
+✅ Suggested “Pre-Install Review Flow”
+(Appointment happened, sale made, job not yet started)
+
+Q1: What made you feel confident choosing this company?
+Answer options:
+
+“They explained everything in detail and made me feel comfortable.”
+
+“They answered all my questions and didn’t pressure me.”
+
+“Their professionalism stood out during the whole process.”
+
+“The quote and options were clear and easy to understand.”
+
+“The rep took the time to make sure I had everything I needed.”
+
+Q2: What was your experience like after saying yes?
+Answer options:
+
+“The communication after booking has been great.”
+
+“They sent helpful updates and made scheduling easy.”
+
+“I received all the paperwork and next steps clearly.”
+
+“They followed up quickly and made me feel supported.”
+
+“Everything has been organized and professional so far.”
+
+Q3: Would you recommend them based on what you've experienced so far?
+Answer options:
+
+“Yes — even before the job starts, I feel confident.”
+
+“Absolutely — I trust the process and the people.”
+
+“Yes — the experience so far has been top-notch.”
+
+“Definitely — they’ve been amazing from the start.”
+
+“Without a doubt — I’m excited to work with them.”

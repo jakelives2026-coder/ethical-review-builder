@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ethical Review Builder</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: auto; }
+    input, button, select { width: 100%; padding: 10px; margin: 10px 0; font-size: 16px; }
+    #reviewOutput { white-space: pre-wrap; background: #f9f9f9; padding: 15px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+
+  <div id="nameInputScreen">
+    <h2>Want to personalize your review?</h2>
+    <p>(Optional) Add your first name. It makes your review feel more personal, but it's totally up to you.</p>
+    <input type="text" id="userName" placeholder="Your first name (optional)" />
+    <button onclick="handleNameInput()">Generate My Review</button>
+  </div>
+
+  <div id="reviewScreen" style="display:none;">
+    <h2>Your Generated Review</h2>
+    <div id="reviewOutput"></div>
+    <button onclick="copyReview()">Copy to Clipboard</button>
+  </div>
+
+  <script>
+    // Simulated input data (normally collected through previous screens)
+    const relationshipType = "acquaintance";
+    const businessName = "Floor Daddy";
+    const city = "Tempe";
+    const serviceType = "flooring";
+    const q1 = "I’ve followed their work for a while.";
+    const q2 = "They’re clearly passionate and trustworthy.";
+    const q3 = "I’d feel great recommending them to anyone.";
+    let userName = "";
+
+    function handleNameInput() {
+      userName = document.getElementById("userName").value.trim();
+      const prompt = buildPrompt(relationshipType, businessName, city, serviceType, q1, q2, q3, userName);
+      generateReview(prompt);
+    }
+
+    function buildPrompt(relationshipType, businessName, city, serviceType, q1, q2, q3, userName = "") {
+      let nameLine = userName ? `Sign the review with this name: ${userName}` : "";
+      return `
+You are writing a short, friendly Google review at a 4th-grade reading level.
+The review should sound natural, honest, and based on a real interaction.
+Do NOT exaggerate. Follow Google’s policy for ethical reviews.
+
+Here’s the context:
+
+- Relationship type: ${relationshipType}
+- Business name: ${businessName}
+- City: ${city}
+- Type of service or product: ${serviceType}
+- Response 1: ${q1}
+- Response 2: ${q2}
+- Response 3: ${q3}
+${nameLine}
+
+Write a 4–6 sentence review using clear, simple language.
+If the user is not a customer, do not say they used the service—only describe what they observed or how they felt based on the interaction.
+If a name is provided, naturally sign the review using it (but don’t force it).
+      `;
+    }
+
+    function generateReview(prompt) {
+      // For now, simulate response (replace with OpenAI call)
+      const review = `I’ve followed Floor Daddy’s work for a while and I’m always impressed. They’re professional and truly care about their customers. I wouldn’t hesitate to recommend them to anyone looking for flooring in Tempe.` + (userName ? ` – ${userName}` : "");
+      document.getElementById("reviewOutput").innerText = review;
+      document.getElementById("nameInputScreen").style.display = "none";
+      document.getElementById("reviewScreen").style.display = "block";
+    }
+
+    function copyReview() {
+      const reviewText = document.getElementById("reviewOutput").innerText;
+      navigator.clipboard.writeText(reviewText);
+      alert("Review copied to clipboard!");
+    }
+  </script>
+
+</body>
+</html>

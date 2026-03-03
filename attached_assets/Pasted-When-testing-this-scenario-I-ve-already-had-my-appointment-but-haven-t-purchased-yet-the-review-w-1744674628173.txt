@@ -1,0 +1,52 @@
+When testing this scenario "I've already had my appointment, but haven't purchased yet" the review was written very well. However, even though a purchase was not made I don't want to specifically mention that in the written review. Below is the written review:
+
+I recently had an appointment with Floor Daddy in Tempe to discuss flooring and installation options. Maya, who I met with, was incredibly helpful without being pushy. She arrived on time and was well-prepared with all the information I needed. Even though I didn't move forward with a purchase, I was really impressed by their professionalism and the way they handled my questions. I feel confident recommending Floor Daddy to anyone in Tempe looking for flooring solutions.
+
+Below are suggested adjustments.
+
+Your Goal in This Scenario:
+Focus on the quality of the interaction, professionalism, and confidence gained
+
+Avoid explicitly stating that a sale didn’t happen
+
+Keep the review credible, positive, and informed, without apology
+
+🧠 Here's How We Adjust for This Scenario
+✅ Remove this kind of phrasing:
+❌ “Even though I didn’t move forward...”
+
+❌ “I didn’t buy anything, but...”
+
+❌ “I chose a different provider...”
+
+These draw attention to a negative or incomplete outcome.
+
+✅ Replace with:
+✅ “I was really impressed by how they handled the appointment.”
+
+✅ “The consultation gave me all the information I needed.”
+
+✅ “It was a great experience from start to finish.”
+
+✅ “They earned my trust and represented the business well.”
+
+✅ “The appointment left a great impression.”
+
+🔄 Suggested Revision of Your Test Review (Softened Version):
+I had an appointment with Floor Daddy in Tempe to explore flooring and installation options. Maya was incredibly helpful without being pushy. She arrived on time, explained everything clearly, and came well-prepared. The whole experience felt professional and easy. I would absolutely recommend Floor Daddy to anyone looking for flooring in Tempe.
+
+✅ How to Adjust the Flow Internally
+For Replit or OpenAI Prompting:
+In your “After Appointment, No Purchase” path:
+
+Avoid capturing or emphasizing “purchase status” in the user input
+
+Reword prompts to focus on the meeting/consultation itself, not the buying decision
+
+✅ Updated Prompts (no mention of purchase)
+Q1: What happened during the appointment that stood out to you?
+Q2: What was your impression after meeting with the team?
+Q3: Would you feel confident recommending them based on your experience?
+
+
+Your thoughts?

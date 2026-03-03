@@ -1,0 +1,77 @@
+Yes, that makes perfect sense, Jason — thanks for the clarification.
+
+You're right: if we're building a universal app that works across any industry, the **customer review questions and answers** should be **broad and flexible** while still guiding the AI toward writing helpful, specific reviews.
+
+Here’s the **revised “I’ve been a customer” flow** with **industry-neutral language** that still prompts thoughtful, SEO-friendly responses — no typing needed.
+
+---
+
+## ✅ Universal Customer Review Flow – Questions & Answer Options (Non-Industry Specific)
+
+---
+
+### **Q1: What service or product did you receive?**  
+*(Goal: Ground the review in a real customer experience without naming a specific industry)*
+
+**Prompt:**  
+*“What did they help you with?”*
+
+**Answer options (single select):**
+- “They provided a helpful service I needed.”  
+- “They delivered a product I had been looking for.”  
+- “They guided me through a process I wasn’t familiar with.”  
+- “They helped solve a problem I was dealing with.”  
+- “They provided support or advice that made things easier.”  
+
+---
+
+### **Q2: What stood out to you about the experience?**  
+*(Goal: Pull out trustworthy, review-worthy qualities that apply across industries)*
+
+**Prompt:**  
+*“What impressed you most about the experience?”*
+
+**Answer options (single select):**
+- “They were kind, professional, and easy to work with.”  
+- “They explained everything clearly and answered all my questions.”  
+- “The process was simple and smooth from start to finish.”  
+- “They followed through on what they promised.”  
+- “I felt taken care of and respected the entire time.”  
+
+---
+
+### **Q3: Would you recommend them to others?**  
+*(Goal: Final signal of trust + confidence for the review reader)*
+
+**Prompt:**  
+*“Would you recommend them to someone you know?”*
+
+**Answer options (single select):**
+- “Yes, I already have.”  
+- “Definitely — they earned my trust.”  
+- “Yes — I’d gladly send friends or family their way.”  
+- “Without hesitation.”  
+- “Absolutely — they did a great job.”  
+
+---
+
+### ✨ Optional Personalization Screen
+
+**Prompt:**  
+*“Want to add your name to the review?”*
+
+**Input Field:**  
+- `Your first name (optional)`
+
+**Helper Text:**  
+“This is optional, but can help make your review feel more personal.”
+
+---
+
+This format ensures:
+✅ Universality across all businesses  
+✅ Consistent structure for AI to work with  
+✅ Great UX with low effort from the user  
+✅ Ethical and policy-safe review outputs  
+
+Would you like me to now apply this same neutral logic to the **Appointment Setter flow** next?

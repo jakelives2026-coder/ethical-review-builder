@@ -1,0 +1,97 @@
+[Screen 2] – Appointment Status Selector
+Question:
+“Where are you in the process?”
+
+Options (radio):
+
+I’ve scheduled an appointment, but it hasn’t happened yet
+
+I’ve already had my appointment, but haven’t purchased yet
+
+I had the appointment and became a customer
+
+→ Next (routes dynamically based on answer)
+
+👇 DYNAMIC PATHS BELOW
+🔹 Path A: Before the Appointment
+(Focus: interaction during scheduling, inquiry, or quote setup)
+
+Q1: What stood out about the person who helped you?
+“They were polite, friendly, and easy to talk to.”
+
+“They answered my questions clearly and patiently.”
+
+“They seemed honest and genuinely wanted to help.”
+
+“They made the process simple and low-pressure.”
+
+“They listened and didn’t rush the conversation.”
+
+Q2: How did the interaction make you feel?
+“I felt confident and comfortable moving forward.”
+
+“It gave me a great first impression of the business.”
+
+“I felt heard and understood.”
+
+“It was refreshing to talk with someone so professional.”
+
+“I left the call feeling reassured and optimistic.”
+
+Q3: Would you recommend this business based on the interaction?
+“Yes — first impressions really matter.”
+
+“Definitely — they treated me with respect and care.”
+
+“Yes — I’d feel good referring others based on this interaction.”
+
+“Absolutely — even the first call was handled professionally.”
+
+“Without a doubt — they gave me every reason to trust them.”
+
+🔹 Path B: After the Appointment (No Purchase)
+(Focus: professionalism and respect shown during the appointment)
+
+Q1: What happened during the appointment that stood out to you?
+“They arrived on time and were well-prepared.”
+
+“They explained everything clearly and answered my questions.”
+
+“They were polite, respectful, and made me feel at ease.”
+
+“The appointment felt professional and low-pressure.”
+
+“They respected my time and space.”
+
+Q2: What’s your overall impression after the appointment?
+“I felt confident about the company after meeting them.”
+
+“They gave me everything I needed to make an informed decision.”
+
+“They were helpful without being pushy.”
+
+“I appreciated their honesty and approach.”
+
+“Even though I didn’t move forward, it was a positive experience.”
+
+Q3: Would you recommend them based on the appointment?
+“Yes — they represented the business well.”
+
+“Absolutely — even without buying, I had a great impression.”
+
+“Yes — they made me feel respected and informed.”
+
+“Definitely — they acted with professionalism throughout.”
+
+“Yes — it was a very helpful consultation.”
+
+🔹 Path C: After the Appointment (Made Purchase)
+(Redirect to Customer Flow)
+
+✅ Skip to Customer Review Flow, using your existing Q1–Q3:
+
+What did they help you with?
+
+What stood out about the experience?
+
+Would you recommend them?
