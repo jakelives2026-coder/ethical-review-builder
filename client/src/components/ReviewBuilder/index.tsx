@@ -7,7 +7,6 @@ import { BusinessInfoScreen } from "./BusinessInfo";
 import { QuestionScreen } from "./QuestionScreen";
 import { ReviewGeneration } from "./ReviewGeneration";
 import { ReviewPreview } from "./ReviewPreview";
-import { NameInputScreen } from "./NameInputScreen";
 import { ReviewCompletion } from "./ReviewCompletion";
 import { ProgressIndicator } from "./ProgressIndicator";
 import { AppointmentStatusScreen } from "./AppointmentStatusScreen";
@@ -255,12 +254,14 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
     }
   };
   
-  // Generate review
-  const handleGenerateReview = async (review: string) => {
+  // Generate (or regenerate) the review. Pass a name to include it and advance to Complete;
+  // omit it for the initial generation, which advances to Preview.
+  const generateReview = async (name?: string) => {
     if (!formData.relationship) return;
-    
+
+    const nextStep = name !== undefined ? Step.Complete : Step.Preview;
+
     try {
-      // Make the API call with all required data
       const response = await apiRequest("POST", "/api/generate-review", {
         relationshipType: formData.relationship,
         businessType: formData.businessType,
@@ -270,17 +271,13 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
         businessService: formData.businessInfo.businessService,
         representativeName: formData.businessInfo.representativeName,
         answers: formData.answers[formData.relationship],
-        userName: formData.userName // Pass the user's name to the API even if empty
+        userName: name !== undefined ? name.trim() : formData.userName,
       });
-      
+
       const data = await response.json();
-      
-      setFormData(prev => ({
-        ...prev,
-        generatedReview: data.review
-      }));
-      
-      goToStep(Step.Preview);
+
+      setFormData(prev => ({ ...prev, generatedReview: data.review }));
+      goToStep(nextStep);
     } catch (error) {
       console.error("Error generating review:", error);
       toast({
@@ -289,73 +286,21 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
         variant: "destructive"
       });
 
-      // Fallback if API fails
-      setFormData(prev => ({
-        ...prev,
-        generatedReview: "A placeholder review until the API is connected."
-      }));
+      if (nextStep === Step.Preview) {
+        setFormData(prev => ({
+          ...prev,
+          generatedReview: "A placeholder review until the API is connected."
+        }));
+      }
 
-      goToStep(Step.Preview);
+      goToStep(nextStep);
     }
   };
-  
-  // Regenerate the review with the user's name
-  const regenerateReviewWithName = async (name: string) => {
-    if (!formData.relationship) return;
-    
-    try {
-      // Make the API call with all required data including the name
-      const response = await apiRequest("POST", "/api/generate-review", {
-        relationshipType: formData.relationship,
-        businessType: formData.businessType,
-        serviceLocation: formData.serviceLocation,
-        businessName: formData.businessInfo.businessName,
-        businessLocation: formData.businessInfo.businessLocation,
-        businessService: formData.businessInfo.businessService,
-        representativeName: formData.businessInfo.representativeName,
-        answers: formData.answers[formData.relationship],
-        userName: name.trim() // Pass the user's name to the API
-      });
-      
-      const data = await response.json();
-      
-      setFormData(prev => ({
-        ...prev,
-        generatedReview: data.review
-      }));
-      
-      goToStep(Step.Complete);
-    } catch (error) {
-      console.error("Error regenerating review with name:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add your name to the review. Proceeding with the current review.",
-        variant: "destructive"
-      });
 
-      // Proceed anyway if API fails
-      goToStep(Step.Complete);
-    }
-  };
-  
-  // Set generated review
+  // Set generated review (called when user accepts an edited review from Preview)
   const handleSetReview = (review: string) => {
-    setFormData(prev => ({
-      ...prev,
-      generatedReview: review
-    }));
+    setFormData(prev => ({ ...prev, generatedReview: review }));
     goToStep(Step.Complete);
-  };
-  
-  // Set user name
-  const handleSetUserName = (name: string) => {
-    setFormData(prev => ({
-      ...prev,
-      userName: name
-    }));
-    
-    // Generate the final review with the user's name
-    regenerateReviewWithName(name);
   };
   
   // Start over
@@ -489,7 +434,7 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
 
         {visibleStep === Step.Generating && (
           <ReviewGeneration
-            onComplete={handleGenerateReview}
+            onComplete={() => generateReview()}
             businessInfo={formData.businessInfo}
           />
         )}
