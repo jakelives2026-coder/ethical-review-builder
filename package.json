@@ -1,5 +1,5 @@
 {
-  "name": "rest-express",
+  "name": "ethical-review-builder",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
@@ -105,5 +105,6 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
-  }
+  },
+  "description": "AI-powered Google review generator for local service businesses"
 }
