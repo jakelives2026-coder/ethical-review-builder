@@ -17,6 +17,9 @@ export const users = pgTable("users", {
   // Replit Auth OIDC user ID (sub claim) for linking to auth provider
   authId: text("auth_id").unique(),
   profileImageUrl: text("profile_image_url"),
+  // Password reset
+  passwordResetToken: text("password_reset_token").unique(),
+  passwordResetExpiresAt: timestamp("password_reset_expires_at"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

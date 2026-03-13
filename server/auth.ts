@@ -7,6 +7,7 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
+import { Resend } from "resend";
 
 declare global {
   namespace Express {
@@ -163,5 +164,85 @@ export function setupAuth(app: Express) {
     // Remove password from response
     const { password, ...userWithoutPassword } = req.user;
     res.json(userWithoutPassword);
+  });
+
+  // POST /api/forgot-password — send reset email
+  app.post("/api/forgot-password", async (req, res, next) => {
+    try {
+      const { email } = req.body;
+      if (!email || typeof email !== "string") {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      // Always return the same message to prevent email enumeration
+      const genericResponse = { message: "If that email is registered, a reset link has been sent." };
+
+      const user = await storage.getUserByEmail(email.toLowerCase().trim());
+      if (!user) return res.json(genericResponse);
+
+      const token = randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      await storage.setPasswordResetToken(user.id, token, expiresAt);
+
+      const appUrl = process.env.APP_URL || "https://ethical-review-builder.vercel.app";
+      const resetUrl = `${appUrl}/reset-password?token=${token}`;
+      const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      await resend.emails.send({
+        from: `Ethical Review Builder <${fromEmail}>`,
+        to: user.email,
+        subject: "Reset your password",
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+            <h2 style="margin-bottom:8px">Reset your password</h2>
+            <p style="color:#555;margin-bottom:24px">
+              You requested a password reset for your Ethical Review Builder account.
+              Click the button below to set a new password. This link expires in 1 hour.
+            </p>
+            <a href="${resetUrl}"
+               style="display:inline-block;background:#000;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600">
+              Reset Password
+            </a>
+            <p style="color:#999;font-size:13px;margin-top:24px">
+              If you didn't request this, you can safely ignore this email.
+            </p>
+          </div>
+        `,
+      });
+
+      res.json(genericResponse);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // POST /api/reset-password — validate token, update password
+  app.post("/api/reset-password", async (req, res, next) => {
+    try {
+      const { token, password } = req.body;
+      if (!token || !password) {
+        return res.status(400).json({ error: "Token and password are required" });
+      }
+      if (password.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      }
+
+      const user = await storage.getUserByPasswordResetToken(token);
+      if (!user) {
+        return res.status(400).json({ error: "Invalid or expired reset link" });
+      }
+      if (!user.passwordResetExpiresAt || user.passwordResetExpiresAt < new Date()) {
+        return res.status(400).json({ error: "Reset link has expired. Please request a new one." });
+      }
+
+      const hashed = await hashPassword(password);
+      await storage.updateUser(user.id, { password: hashed });
+      await storage.clearPasswordResetToken(user.id);
+
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      next(error);
+    }
   });
 }

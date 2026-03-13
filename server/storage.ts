@@ -25,6 +25,9 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, data: Partial<Omit<User, "id">>): Promise<User | undefined>;
   findOrCreateUserByOIDC(claims: { sub: string; email?: string; first_name?: string; last_name?: string; profile_image_url?: string }): Promise<User>;
+  getUserByPasswordResetToken(token: string): Promise<User | undefined>;
+  setPasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<void>;
+  clearPasswordResetToken(userId: number): Promise<void>;
   
   // Business profile operations
   getBusinessProfile(id: number): Promise<BusinessProfile | undefined>;
@@ -159,6 +162,23 @@ export class DatabaseStorage implements IStorage {
       lastLoginAt: new Date()
     }).returning();
     return newUser;
+  }
+
+  async getUserByPasswordResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.passwordResetToken, token));
+    return user;
+  }
+
+  async setPasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<void> {
+    await db.update(users)
+      .set({ passwordResetToken: token, passwordResetExpiresAt: expiresAt })
+      .where(eq(users.id, userId));
+  }
+
+  async clearPasswordResetToken(userId: number): Promise<void> {
+    await db.update(users)
+      .set({ passwordResetToken: null, passwordResetExpiresAt: null })
+      .where(eq(users.id, userId));
   }
 
   // Business profile operations

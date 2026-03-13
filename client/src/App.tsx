@@ -10,6 +10,8 @@ import { ProtectedRoute } from "@/lib/protected-route";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
+import ForgotPasswordPage from "@/pages/forgot-password-page";
+import ResetPasswordPage from "@/pages/reset-password-page";
 import Dashboard from "@/pages/dashboard";
 import SharedTemplatePage from "@/pages/shared-template-page";
 import PublicReview from "@/pages/public-review";
@@ -19,6 +21,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       
       {/* Shared template route */}
