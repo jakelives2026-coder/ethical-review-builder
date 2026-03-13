@@ -72,13 +72,11 @@ export function Navbar() {
                 Create Review
               </Button>
             </Link>
-            {!user && (
-              <Link href="/pricing">
-                <span className={`text-sm font-medium transition-colors hover:text-primary cursor-pointer ${isActive("/pricing") ? "text-primary" : ""}`}>
-                  Pricing
-                </span>
-              </Link>
-            )}
+            <Link href="/pricing">
+              <span className={`text-sm font-medium transition-colors hover:text-primary cursor-pointer ${isActive("/pricing") ? "text-primary" : ""}`}>
+                Pricing
+              </span>
+            </Link>
           </div>
         </div>
 
