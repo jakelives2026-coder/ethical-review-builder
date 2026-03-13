@@ -105,10 +105,7 @@ export function Navbar() {
                   <Link href="/dashboard">Dashboard</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="cursor-pointer">
-                  <Link href="/dashboard?tab=settings">Profile</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="cursor-pointer">
-                  <Link href="/dashboard?tab=settings">Settings</Link>
+                  <Link href="/profile">Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
