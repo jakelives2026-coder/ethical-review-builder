@@ -23,6 +23,9 @@ export const users = pgTable("users", {
   // Email verification
   emailVerified: boolean("email_verified").default(false).notNull(),
   emailVerificationToken: text("email_verification_token").unique(),
+  // Stripe billing
+  stripeCustomerId: text("stripe_customer_id").unique(),
+  stripePlanId: text("stripe_plan_id"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
