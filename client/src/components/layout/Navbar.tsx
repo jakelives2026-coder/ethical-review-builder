@@ -61,7 +61,7 @@ export function Navbar() {
           <Link href="/">
             <span className="text-xl font-bold flex items-center cursor-pointer">
               <span className="text-primary mr-2">✦</span>
-              Review Builder Pro
+              Ethical Review Builder
             </span>
           </Link>
           

@@ -29,7 +29,7 @@ export default function AuthPage() {
       <div className="flex flex-col justify-center flex-1 px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
         <div className="w-full max-w-md mx-auto lg:w-96">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold">Review Builder Pro</h1>
+            <h1 className="text-3xl font-bold">Ethical Review Builder</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Sign in to create authentic, AI-powered reviews for your business
             </p>
