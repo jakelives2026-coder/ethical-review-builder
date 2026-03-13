@@ -1,8 +1,9 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth.tsx";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PlanFeature {
@@ -19,7 +20,7 @@ interface Plan {
   features: PlanFeature[];
   cta: string;
   ctaHref: string;
-  ctaNote?: string;
+  planId?: "pro" | "business";
   highlighted: boolean;
 }
 
@@ -66,7 +67,7 @@ const plans: Plan[] = [
     ],
     cta: "Get Pro",
     ctaHref: "/auth",
-    ctaNote: "Payments launching soon — sign up to be notified.",
+    planId: "pro",
     highlighted: true,
   },
   {
@@ -88,7 +89,7 @@ const plans: Plan[] = [
     ],
     cta: "Get Business",
     ctaHref: "/auth",
-    ctaNote: "Payments launching soon — sign up to be notified.",
+    planId: "business",
     highlighted: false,
   },
 ];
@@ -112,6 +113,35 @@ function FeatureRow({ feature }: { feature: PlanFeature }) {
 
 function PlanCard({ plan }: { plan: Plan }) {
   const { user } = useAuth();
+  const [, navigate] = useLocation();
+
+  const checkout = useMutation({
+    mutationFn: async (planId: "pro" | "business") => {
+      const res = await fetch("/api/stripe/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId }),
+      });
+      if (!res.ok) throw new Error("Failed to create checkout session");
+      return res.json() as Promise<{ url: string }>;
+    },
+    onSuccess: ({ url }) => {
+      window.location.href = url;
+    },
+  });
+
+  function handleCta() {
+    if (!plan.planId) {
+      // Free plan — go to dashboard or auth
+      navigate(user ? "/dashboard" : plan.ctaHref);
+      return;
+    }
+    if (!user) {
+      navigate(plan.ctaHref);
+      return;
+    }
+    checkout.mutate(plan.planId);
+  }
 
   return (
     <div
@@ -183,26 +213,32 @@ function PlanCard({ plan }: { plan: Plan }) {
         ))}
       </ul>
 
-      <div className="space-y-2">
-        <Link href={user ? "/dashboard" : plan.ctaHref}>
-          <Button
-            className={cn(
-              "w-full",
-              plan.highlighted
-                ? "bg-background text-foreground hover:bg-background/90"
-                : ""
-            )}
-            variant={plan.highlighted ? "default" : "outline"}
-          >
-            {user && plan.name === "Free" ? "Go to Dashboard" : plan.cta}
-          </Button>
-        </Link>
-        {plan.ctaNote && (
+      <div>
+        <Button
+          className={cn(
+            "w-full",
+            plan.highlighted
+              ? "bg-background text-foreground hover:bg-background/90"
+              : ""
+          )}
+          variant={plan.highlighted ? "default" : "outline"}
+          onClick={handleCta}
+          disabled={checkout.isPending}
+        >
+          {checkout.isPending ? (
+            <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Redirecting…</>
+          ) : user && plan.name === "Free" ? (
+            "Go to Dashboard"
+          ) : (
+            plan.cta
+          )}
+        </Button>
+        {checkout.isError && (
           <p className={cn(
-            "text-xs text-center",
-            plan.highlighted ? "text-background/60" : "text-muted-foreground"
+            "text-xs text-center mt-2",
+            plan.highlighted ? "text-background/60" : "text-destructive"
           )}>
-            {plan.ctaNote}
+            Something went wrong. Please try again.
           </p>
         )}
       </div>

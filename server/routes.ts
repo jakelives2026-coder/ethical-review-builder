@@ -8,6 +8,8 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { businessProfiles, reviewTemplates } from "@shared/schema";
+import { stripe } from "./stripe";
+import { PLAN_PRICE_MAP } from "./stripe-config";
 
 const generateReviewLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
@@ -1224,6 +1226,74 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
     } catch (error) {
       console.error("Error updating user plan:", error);
       res.status(500).json({ error: "Failed to update user plan" });
+    }
+  });
+
+  // =====================
+  // Stripe Checkout
+  // =====================
+
+  // Create a Stripe Checkout Session for Pro or Business plan
+  app.post("/api/stripe/create-checkout-session", requireAuth, async (req, res) => {
+    try {
+      const { planId } = z.object({ planId: z.enum(["pro", "business"]) }).parse(req.body);
+
+      const priceId = PLAN_PRICE_MAP[planId];
+      if (!priceId) {
+        return res.status(400).json({ error: "Invalid plan" });
+      }
+
+      const user = req.user!;
+      const appUrl = process.env.APP_URL ?? "http://localhost:5000";
+
+      // Retrieve or create Stripe customer
+      let customerId = user.stripeCustomerId ?? undefined;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email ?? undefined,
+          metadata: { userId: String(user.id) },
+        });
+        customerId = customer.id;
+        await storage.updateUser(user.id, { stripeCustomerId: customerId });
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        mode: "subscription",
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${appUrl}/dashboard?upgraded=true`,
+        cancel_url: `${appUrl}/pricing`,
+      });
+
+      res.json({ url: session.url });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Stripe checkout error:", error);
+      res.status(500).json({ error: "Failed to create checkout session" });
+    }
+  });
+
+  // Create a Stripe Billing Portal Session for managing subscriptions
+  app.post("/api/stripe/create-portal-session", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      const appUrl = process.env.APP_URL ?? "http://localhost:5000";
+
+      if (!user.stripeCustomerId) {
+        return res.status(400).json({ error: "No Stripe customer found for this account" });
+      }
+
+      const portalSession = await stripe.billingPortal.sessions.create({
+        customer: user.stripeCustomerId,
+        return_url: `${appUrl}/dashboard`,
+      });
+
+      res.json({ url: portalSession.url });
+    } catch (error) {
+      console.error("Stripe portal error:", error);
+      res.status(500).json({ error: "Failed to create portal session" });
     }
   });
 
