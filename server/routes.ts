@@ -1217,12 +1217,13 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
   // Update user profile (fullName, company)
   app.patch("/api/user/profile", requireAuth, async (req, res) => {
     try {
-      const { fullName, company } = req.body;
-      
+      const { fullName, company, hasOnboarded } = req.body;
+
       // Update only allowed fields
-      const updateData: { fullName?: string; company?: string } = {};
+      const updateData: { fullName?: string; company?: string; hasOnboarded?: boolean } = {};
       if (fullName !== undefined) updateData.fullName = fullName;
       if (company !== undefined) updateData.company = company;
+      if (hasOnboarded !== undefined) updateData.hasOnboarded = Boolean(hasOnboarded);
       
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ error: "No valid fields to update" });

@@ -29,6 +29,8 @@ export const users = pgTable("users", {
   // Usage tracking (free plan limits)
   reviewsGeneratedThisMonth: integer("reviews_generated_this_month").default(0).notNull(),
   reviewPeriodStart: timestamp("review_period_start"),
+  // Onboarding
+  hasOnboarded: boolean("has_onboarded").default(false).notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

@@ -38,7 +38,7 @@ export default function AuthPage() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (user) setLocation("/dashboard");
+    if (user) setLocation(user.hasOnboarded ? "/dashboard" : "/onboarding");
   }, [user, setLocation]);
 
   const loginForm = useForm<LoginValues>({

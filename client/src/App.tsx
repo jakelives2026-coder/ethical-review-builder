@@ -18,6 +18,7 @@ import TermsPage from "@/pages/terms-page";
 import PricingPage from "@/pages/pricing-page";
 import Dashboard from "@/pages/dashboard";
 import ProfilePage from "@/pages/profile-page";
+import OnboardingPage from "@/pages/onboarding-page";
 import SharedTemplatePage from "@/pages/shared-template-page";
 import PublicReview from "@/pages/public-review";
 
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/pricing" component={PricingPage} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
+      <ProtectedRoute path="/onboarding" component={OnboardingPage} />
       
       {/* Shared template route */}
       <Route path="/t/:shareableId" component={SharedTemplatePage} />
