@@ -2,7 +2,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, ReactNode } from "react";
 import type { User } from "@shared/schema";
 
-// Fetch the legacy user data (synced with OIDC auth)
 async function fetchUser(): Promise<User | null> {
   const response = await fetch("/api/user", {
     credentials: "include",
@@ -40,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const login = () => {
-    window.location.href = "/api/login";
+    window.location.href = "/auth";
   };
 
   const logout = () => {

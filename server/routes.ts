@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import OpenAI from "openai";
-import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import { setupAuth } from "./auth";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "./db";
@@ -19,59 +19,16 @@ const generateReviewLimiter = rateLimit({
   },
 });
 
-// Extend Express Request to carry the synced legacy user
-declare global {
-  namespace Express {
-    interface Request {
-      legacyUser?: import("@shared/schema").User;
-    }
-  }
+// Passport-based auth middleware
+function requireAuth(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) return next();
+  return res.status(401).json({ error: "Authentication required" });
 }
 
-// Keep for backward compatibility in Replit middleware below
-interface RequestWithLegacyUser extends Request {
-  legacyUser?: import("@shared/schema").User;
-}
-
-// Middleware to ensure the user is authenticated and sync with legacy user
-async function requireAuth(req: RequestWithLegacyUser, res: Response, next: NextFunction) {
-  const oidcUser = req.user as any;
-  if (!req.isAuthenticated() || !oidcUser?.claims?.sub) {
-    return res.status(401).json({ error: "Authentication required" });
-  }
-
-  try {
-    // Get or create legacy user from OIDC claims
-    const legacyUser = await storage.findOrCreateUserByOIDC(oidcUser.claims);
-    req.legacyUser = legacyUser;
-    next();
-  } catch (error) {
-    console.error("Error syncing OIDC user:", error);
-    return res.status(500).json({ error: "Failed to sync user" });
-  }
-}
-
-// Middleware to check for premium features access
-async function requirePremiumPlan(req: RequestWithLegacyUser, res: Response, next: NextFunction) {
-  const oidcUser = req.user as any;
-  if (!req.isAuthenticated() || !oidcUser?.claims?.sub) {
-    return res.status(401).json({ error: "Authentication required" });
-  }
-
-  try {
-    const legacyUser = await storage.findOrCreateUserByOIDC(oidcUser.claims);
-    req.legacyUser = legacyUser;
-    
-    // Check if user has premium or enterprise plan
-    if (legacyUser.planType === 'free') {
-      return res.status(403).json({ error: "This feature requires a premium plan" });
-    }
-    
-    next();
-  } catch (error) {
-    console.error("Error checking premium plan:", error);
-    return res.status(500).json({ error: "Failed to check plan" });
-  }
+function requirePremiumPlan(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: "Authentication required" });
+  if (req.user!.planType === 'free') return res.status(403).json({ error: "This feature requires a premium plan" });
+  next();
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -80,46 +37,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     apiKey: process.env.OPENAI_API_KEY || "",
   });
 
-  // Set up Replit Auth (OIDC-based authentication)
-  await setupAuth(app);
-  registerAuthRoutes(app);
-  
-  // =====================
-  // User API (returns legacy user synced with OIDC)
-  // =====================
-  const safeUserSchema = z.object({
-    id: z.number(),
-    username: z.string(),
-    email: z.string().nullable(),
-    fullName: z.string().nullable(),
-    company: z.string().nullable(),
-    planType: z.enum(['free', 'pro', 'enterprise']),
-    profileImageUrl: z.string().nullable(),
-    createdAt: z.date().nullable(),
-    lastLoginAt: z.date().nullable(),
-  });
-  
-  app.get("/api/user", requireAuth, async (req, res) => {
-    try {
-      const user = req.legacyUser!;
-      // Return only safe fields - exclude password, authId, and other internal fields
-      const safeUser = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        fullName: user.fullName,
-        company: user.company,
-        planType: user.planType,
-        profileImageUrl: user.profileImageUrl,
-        createdAt: user.createdAt,
-        lastLoginAt: user.lastLoginAt,
-      };
-      res.json(safeUser);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ error: "Failed to fetch user" });
-    }
-  });
+  // Set up session, passport, and auth routes (/api/login, /api/logout, /api/register, /api/user)
+  setupAuth(app);
   
   // =====================
   // Config APIs
@@ -141,7 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all business profiles for the authenticated user
   app.get("/api/business-profiles", requireAuth, async (req, res) => {
     try {
-      const profiles = await storage.getBusinessProfilesByUser(req.legacyUser!.id);
+      const profiles = await storage.getBusinessProfilesByUser(req.user!.id);
       res.json(profiles);
     } catch (error) {
       console.error("Error fetching business profiles:", error);
@@ -160,7 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if the profile belongs to the authenticated user
-      if (profile.userId !== req.legacyUser!.id) {
+      if (profile.userId !== req.user!.id) {
         return res.status(403).json({ error: "You don't have permission to access this profile" });
       }
       
@@ -188,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add the user ID
       const profile = await storage.createBusinessProfile({
         ...validatedData,
-        userId: req.legacyUser!.id
+        userId: req.user!.id
       });
       
       res.status(201).json(profile);
@@ -213,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Business profile not found" });
       }
       
-      if (existingProfile.userId !== req.legacyUser!.id) {
+      if (existingProfile.userId !== req.user!.id) {
         return res.status(403).json({ error: "You don't have permission to update this profile" });
       }
       
@@ -235,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = schema.parse(req.body);
       
       // Check plan for branding features
-      const user = req.legacyUser!;
+      const user = req.user!;
       const hasBrandingFields = validatedData.logoUrl !== undefined || 
         validatedData.primaryColor !== undefined || 
         validatedData.accentColor !== undefined ||
@@ -270,7 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Business profile not found" });
       }
       
-      if (existingProfile.userId !== req.legacyUser!.id) {
+      if (existingProfile.userId !== req.user!.id) {
         return res.status(403).json({ error: "You don't have permission to delete this profile" });
       }
       
@@ -295,12 +214,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Business profile not found" });
       }
       
-      if (existingProfile.userId !== req.legacyUser!.id) {
+      if (existingProfile.userId !== req.user!.id) {
         return res.status(403).json({ error: "You don't have permission to update this profile" });
       }
       
       // Check plan for branding features
-      const user = req.legacyUser!;
+      const user = req.user!;
       if (user.planType === 'free') {
         return res.status(403).json({ error: "Custom branding requires a Pro or Enterprise plan" });
       }
@@ -336,7 +255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Business profile not found" });
       }
       
-      if (existingProfile.userId !== req.legacyUser!.id) {
+      if (existingProfile.userId !== req.user!.id) {
         return res.status(403).json({ error: "You don't have permission to update this profile" });
       }
       
@@ -358,12 +277,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Business profile not found" });
       }
       
-      if (existingProfile.userId !== req.legacyUser!.id) {
+      if (existingProfile.userId !== req.user!.id) {
         return res.status(403).json({ error: "You don't have permission to update this profile" });
       }
       
       // Check plan for embed features
-      const user = req.legacyUser!;
+      const user = req.user!;
       if (user.planType !== 'enterprise') {
         return res.status(403).json({ error: "Embed widget requires an Enterprise plan" });
       }
@@ -446,7 +365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all review templates for the authenticated user
   app.get("/api/review-templates", requireAuth, async (req, res) => {
     try {
-      const templates = await storage.getReviewTemplatesByUser(req.legacyUser!.id);
+      const templates = await storage.getReviewTemplatesByUser(req.user!.id);
       res.json(templates);
     } catch (error) {
       console.error("Error fetching review templates:", error);
@@ -457,7 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all public templates plus user's templates
   app.get("/api/review-templates/all", requireAuth, async (req, res) => {
     try {
-      const userTemplates = await storage.getReviewTemplatesByUser(req.legacyUser!.id);
+      const userTemplates = await storage.getReviewTemplatesByUser(req.user!.id);
       const publicTemplates = await storage.getPublicReviewTemplates();
       
       // Filter out duplicates (user's templates that are also public)
@@ -500,7 +419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Business profile not found" });
       }
       
-      if (existingProfile.userId !== req.legacyUser!.id) {
+      if (existingProfile.userId !== req.user!.id) {
         return res.status(403).json({ error: "You don't have permission to access this profile" });
       }
       
@@ -523,7 +442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Allow access to public templates or owned templates
-      if (!template.isPublic && template.userId !== req.legacyUser!.id) {
+      if (!template.isPublic && template.userId !== req.user!.id) {
         return res.status(403).json({ error: "You don't have permission to access this template" });
       }
       
@@ -557,14 +476,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = schema.parse(req.body);
       
       // Check if making public templates is restricted to premium users
-      if (validatedData.isPublic && req.legacyUser!.planType === 'free') {
+      if (validatedData.isPublic && req.user!.planType === 'free') {
         return res.status(403).json({ error: "Creating public templates requires a premium plan" });
       }
       
       // If a business profile is specified, verify it belongs to the user
       if (validatedData.businessProfileId) {
         const profile = await storage.getBusinessProfile(validatedData.businessProfileId);
-        if (!profile || profile.userId !== req.legacyUser!.id) {
+        if (!profile || profile.userId !== req.user!.id) {
           return res.status(403).json({ error: "Invalid business profile" });
         }
       }
@@ -572,7 +491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add the user ID
       const template = await storage.createReviewTemplate({
         ...validatedData,
-        userId: req.legacyUser!.id
+        userId: req.user!.id
       });
       
       res.status(201).json(template);
@@ -597,7 +516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Review template not found" });
       }
       
-      if (existingTemplate.userId !== req.legacyUser!.id) {
+      if (existingTemplate.userId !== req.user!.id) {
         return res.status(403).json({ error: "You don't have permission to update this template" });
       }
       
@@ -621,14 +540,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = schema.parse(req.body);
       
       // Check if making public templates is restricted to premium users
-      if (validatedData.isPublic === true && req.legacyUser!.planType === 'free') {
+      if (validatedData.isPublic === true && req.user!.planType === 'free') {
         return res.status(403).json({ error: "Creating public templates requires a premium plan" });
       }
       
       // If a business profile is specified, verify it belongs to the user
       if (validatedData.businessProfileId) {
         const profile = await storage.getBusinessProfile(validatedData.businessProfileId);
-        if (!profile || profile.userId !== req.legacyUser!.id) {
+        if (!profile || profile.userId !== req.user!.id) {
           return res.status(403).json({ error: "Invalid business profile" });
         }
       }
@@ -658,7 +577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Review template not found" });
       }
       
-      if (existingTemplate.userId !== req.legacyUser!.id) {
+      if (existingTemplate.userId !== req.user!.id) {
         return res.status(403).json({ error: "You don't have permission to delete this template" });
       }
       
@@ -679,7 +598,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all reviews for the authenticated user
   app.get("/api/reviews", requireAuth, async (req, res) => {
     try {
-      const reviews = await storage.getReviewsByUser(req.legacyUser!.id);
+      const reviews = await storage.getReviewsByUser(req.user!.id);
       res.json(reviews);
     } catch (error) {
       console.error("Error fetching reviews:", error);
@@ -698,7 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if the review belongs to the authenticated user
-      if (review.userId !== req.legacyUser!.id) {
+      if (review.userId !== req.user!.id) {
         return res.status(403).json({ error: "You don't have permission to access this review" });
       }
       
@@ -731,7 +650,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const experienceAnswers = hasMeetingLocation ? sanitizedAnswers.slice(1) : sanitizedAnswers;
       
       // Super reviews are premium features - check if authenticated and on premium plan
-      if (isSuperReview && req.isAuthenticated() && req.legacyUser!.planType === 'free') {
+      if (isSuperReview && req.isAuthenticated() && req.user!.planType === 'free') {
         return res.status(403).json({ error: "Super reviews require a premium plan" });
       }
       
@@ -1148,10 +1067,10 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
         
       // If the user is authenticated and specified business profile and/or template ID
       // save the review to the database
-      if (req.isAuthenticated() && req.legacyUser!.id) {
+      if (req.isAuthenticated() && req.user!.id) {
         try {
           const reviewData = {
-            userId: req.legacyUser!.id,
+            userId: req.user!.id,
             businessProfileId: businessProfileId || null,
             templateId: templateId || null,
             businessName,
@@ -1201,7 +1120,7 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
         return res.status(404).json({ error: "Review not found" });
       }
       
-      if (existingReview.userId !== req.legacyUser!.id) {
+      if (existingReview.userId !== req.user!.id) {
         return res.status(403).json({ error: "You don't have permission to update this review" });
       }
       
@@ -1226,7 +1145,7 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
         return res.status(404).json({ error: "Review not found" });
       }
       
-      if (existingReview.userId !== req.legacyUser!.id) {
+      if (existingReview.userId !== req.user!.id) {
         return res.status(403).json({ error: "You don't have permission to delete this review" });
       }
       
@@ -1254,7 +1173,7 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
         return res.status(400).json({ error: "No valid fields to update" });
       }
       
-      const updatedUser = await storage.updateUser(req.legacyUser!.id, updateData);
+      const updatedUser = await storage.updateUser(req.user!.id, updateData);
       
       if (!updatedUser) {
         return res.status(404).json({ error: "User not found" });
@@ -1280,7 +1199,7 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
       }
       
       // Update the user's plan
-      const updatedUser = await storage.updateUser(req.legacyUser!.id, { planType });
+      const updatedUser = await storage.updateUser(req.user!.id, { planType });
       
       if (!updatedUser) {
         return res.status(404).json({ error: "User not found" });
