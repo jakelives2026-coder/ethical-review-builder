@@ -667,6 +667,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isSuperReview && req.isAuthenticated() && req.user!.planType === 'free') {
         return res.status(403).json({ error: "Super reviews require a premium plan" });
       }
+
+      // Enforce free plan monthly limit (3 reviews/month for authenticated free users)
+      let freeUserReviewCount: number | null = null;
+      if (req.isAuthenticated() && req.user!.planType === 'free') {
+        const freshUser = await storage.getUser(req.user!.id);
+        if (freshUser) {
+          const now = new Date();
+          const periodStart = freshUser.reviewPeriodStart;
+          const isNewPeriod =
+            !periodStart ||
+            now.getFullYear() !== periodStart.getFullYear() ||
+            now.getMonth() !== periodStart.getMonth();
+
+          if (isNewPeriod) {
+            await storage.updateUser(freshUser.id, {
+              reviewsGeneratedThisMonth: 0,
+              reviewPeriodStart: now,
+            });
+            freeUserReviewCount = 0;
+          } else {
+            freeUserReviewCount = freshUser.reviewsGeneratedThisMonth;
+            if (freeUserReviewCount >= 3) {
+              return res.status(403).json({
+                error: "You've used all 3 free reviews for this month. Upgrade to Pro for unlimited reviews.",
+                upgradeUrl: "/pricing",
+              });
+            }
+          }
+        }
+      }
       
       // Build the representative line if a name was provided
       const repLine = representativeName ? `- Representative's name: ${representativeName}` : "";
@@ -1100,11 +1130,22 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
             isSuperReview: isSuperReview || false,
             isPublished: false
           };
-          
+
           await storage.createReview(reviewData);
         } catch (saveError) {
           console.error("Error saving review:", saveError);
           // Continue even if saving fails
+        }
+
+        // Increment monthly usage counter for free plan users
+        if (req.user!.planType === 'free' && freeUserReviewCount !== null) {
+          try {
+            await storage.updateUser(req.user!.id, {
+              reviewsGeneratedThisMonth: freeUserReviewCount + 1,
+            });
+          } catch (counterError) {
+            console.error("Error incrementing review counter:", counterError);
+          }
         }
       }
       

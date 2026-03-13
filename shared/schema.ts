@@ -26,6 +26,9 @@ export const users = pgTable("users", {
   // Stripe billing
   stripeCustomerId: text("stripe_customer_id").unique(),
   stripePlanId: text("stripe_plan_id"),
+  // Usage tracking (free plan limits)
+  reviewsGeneratedThisMonth: integer("reviews_generated_this_month").default(0).notNull(),
+  reviewPeriodStart: timestamp("review_period_start"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
