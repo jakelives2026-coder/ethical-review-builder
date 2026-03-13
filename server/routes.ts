@@ -39,7 +39,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Set up session, passport, and auth routes (/api/login, /api/logout, /api/register, /api/user)
   setupAuth(app);
-  
+
+  // =====================
+  // Health check
+  // =====================
+
+  app.get("/api/health", (_req, res) => {
+    res.json({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      version: "1.0.0",
+    });
+  });
+
   // =====================
   // Config APIs
   // =====================
