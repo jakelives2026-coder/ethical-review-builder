@@ -111,8 +111,8 @@ export default function SharedTemplatePage() {
   if (error || !template) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center">
-        <h1 className={getClassName("text-2xl font-bold mb-4", getMobileTextStyles())}>Template Not Found</h1>
-        <p className={getClassName("text-muted-foreground mb-6", getMobileTextStyles())}>
+        <h1 className={getClassName("text-2xl font-bold mb-4", getMobileTextStyles("heading"))}>Template Not Found</h1>
+        <p className={getClassName("text-muted-foreground mb-6", getMobileTextStyles("body"))}>
           The review template you're looking for doesn't exist or may have been removed.
         </p>
         <Button onClick={() => setLocation("/")} className={getMobileButtonStyles()}>
@@ -128,17 +128,17 @@ export default function SharedTemplatePage() {
       <div className="container max-w-2xl px-4 py-8 mx-auto">
         <Card className="w-full">
           <CardHeader>
-            <CardTitle className={getMobileTextStyles()}>{template.name}</CardTitle>
-            <CardDescription className={getMobileTextStyles()}>{template.description}</CardDescription>
+            <CardTitle className={getMobileTextStyles("subheading")}>{template.name}</CardTitle>
+            <CardDescription className={getMobileTextStyles("body")}>{template.description}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-md">
               <Building2 className="h-5 w-5 text-primary" />
               <div>
-                <p className={getClassName("font-semibold", getMobileTextStyles())}>
+                <p className={getClassName("font-semibold", getMobileTextStyles("body"))}>
                   {template.businessProfile?.businessName}
                 </p>
-                <p className={getClassName("text-sm text-muted-foreground", getMobileTextStyles())}>
+                <p className={getClassName("text-sm text-muted-foreground", getMobileTextStyles("body"))}>
                   {template.businessProfile?.businessLocation}
                 </p>
               </div>
@@ -147,8 +147,8 @@ export default function SharedTemplatePage() {
             <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-md">
               <User className="h-5 w-5 text-primary" />
               <div>
-                <p className={getClassName("font-semibold", getMobileTextStyles())}>Share your experience</p>
-                <p className={getClassName("text-sm text-muted-foreground", getMobileTextStyles())}>
+                <p className={getClassName("font-semibold", getMobileTextStyles("body"))}>Share your experience</p>
+                <p className={getClassName("text-sm text-muted-foreground", getMobileTextStyles("body"))}>
                   Help others by providing your honest feedback
                 </p>
               </div>
@@ -193,13 +193,13 @@ export default function SharedTemplatePage() {
       <div className="container max-w-2xl px-4 py-8 mx-auto">
         <Card className="w-full">
           <CardHeader>
-            <CardTitle className={getMobileTextStyles()}>Answer Questions</CardTitle>
-            <CardDescription className={getMobileTextStyles()}>
+            <CardTitle className={getMobileTextStyles("subheading")}>Answer Questions</CardTitle>
+            <CardDescription className={getMobileTextStyles("body")}>
               Please provide answers to the following questions
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className={getMobileTextStyles()}>
+            <p className={getMobileTextStyles("body")}>
               {template.customQuestions && template.customQuestions.length > 0 
                 ? `${template.customQuestions.length} questions to answer`
                 : "No questions available"

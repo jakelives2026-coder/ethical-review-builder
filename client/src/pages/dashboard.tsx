@@ -111,7 +111,7 @@ export default function Dashboard() {
         <BusinessProfileForm
           isOpen={isProfileFormOpen}
           onClose={handleCloseForm}
-          editData={editingProfile || undefined}
+          editData={editingProfile as any}
           userId={user?.id || 0}
         />
       )}

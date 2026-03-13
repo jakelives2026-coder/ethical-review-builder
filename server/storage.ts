@@ -323,14 +323,14 @@ export class DatabaseStorage implements IStorage {
       allowRelationshipChange: template.allowRelationshipChange,
       thankYouMessage: template.thankYouMessage,
       redirectUrl: template.redirectUrl,
-      customQuestions: template.customQuestions,
+      customQuestions: template.customQuestions as any,
       settings: template.settings,
       isPublic: template.isPublic,
       updatedAt: now
     };
     
     // Create the template without a shareable ID initially
-    const [newTemplate] = await db.insert(reviewTemplates).values(insertValues).returning();
+    const [newTemplate] = await db.insert(reviewTemplates).values(insertValues as any).returning();
     
     // Generate and update with a shareable ID
     if (newTemplate) {

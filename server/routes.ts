@@ -19,38 +19,30 @@ const generateReviewLimiter = rateLimit({
   },
 });
 
-// Extend Express User type for Replit Auth
+// Extend Express Request to carry the synced legacy user
 declare global {
   namespace Express {
-    interface User {
-      claims: {
-        sub: string;
-        email?: string;
-        first_name?: string;
-        last_name?: string;
-        profile_image_url?: string;
-      };
-      access_token: string;
-      refresh_token?: string;
-      expires_at?: number;
+    interface Request {
+      legacyUser?: import("@shared/schema").User;
     }
   }
 }
 
-// Store the legacy user in the request for route handlers
+// Keep for backward compatibility in Replit middleware below
 interface RequestWithLegacyUser extends Request {
   legacyUser?: import("@shared/schema").User;
 }
 
 // Middleware to ensure the user is authenticated and sync with legacy user
 async function requireAuth(req: RequestWithLegacyUser, res: Response, next: NextFunction) {
-  if (!req.isAuthenticated() || !req.user?.claims?.sub) {
+  const oidcUser = req.user as any;
+  if (!req.isAuthenticated() || !oidcUser?.claims?.sub) {
     return res.status(401).json({ error: "Authentication required" });
   }
-  
+
   try {
     // Get or create legacy user from OIDC claims
-    const legacyUser = await storage.findOrCreateUserByOIDC(req.user.claims);
+    const legacyUser = await storage.findOrCreateUserByOIDC(oidcUser.claims);
     req.legacyUser = legacyUser;
     next();
   } catch (error) {
@@ -61,12 +53,13 @@ async function requireAuth(req: RequestWithLegacyUser, res: Response, next: Next
 
 // Middleware to check for premium features access
 async function requirePremiumPlan(req: RequestWithLegacyUser, res: Response, next: NextFunction) {
-  if (!req.isAuthenticated() || !req.user?.claims?.sub) {
+  const oidcUser = req.user as any;
+  if (!req.isAuthenticated() || !oidcUser?.claims?.sub) {
     return res.status(401).json({ error: "Authentication required" });
   }
-  
+
   try {
-    const legacyUser = await storage.findOrCreateUserByOIDC(req.user.claims);
+    const legacyUser = await storage.findOrCreateUserByOIDC(oidcUser.claims);
     req.legacyUser = legacyUser;
     
     // Check if user has premium or enterprise plan

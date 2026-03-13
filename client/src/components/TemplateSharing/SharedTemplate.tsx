@@ -80,6 +80,8 @@ export function SharedTemplate({ shareableId }: SharedTemplateProps) {
       setReviewData({
         relationship: template.relationshipType as RelationshipType,
         businessInfo,
+        businessType: null,
+        serviceLocation: null,
         answers: {
           customer: ['', '', ''],
           acquaintance: ['', '', ''],
