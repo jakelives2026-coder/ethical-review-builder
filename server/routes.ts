@@ -7,9 +7,9 @@ import { setupAuth } from "./auth";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "./db";
-import { businessProfiles, reviewTemplates } from "@shared/schema";
+import { businessProfiles, reviewTemplates, users } from "@shared/schema";
 import { stripe } from "./stripe";
-import { PLAN_PRICE_MAP } from "./stripe-config";
+import { PLAN_PRICE_MAP, PRICE_PLAN_MAP } from "./stripe-config";
 
 const generateReviewLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
@@ -1227,6 +1227,96 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
       console.error("Error updating user plan:", error);
       res.status(500).json({ error: "Failed to update user plan" });
     }
+  });
+
+  // =====================
+  // Stripe Webhook
+  // =====================
+
+  app.post("/api/stripe/webhook", async (req, res) => {
+    const sig = req.headers["stripe-signature"];
+    const secret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!sig || !secret) {
+      return res.status(400).json({ error: "Missing stripe signature or webhook secret" });
+    }
+
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(req.body as Buffer, sig, secret);
+    } catch (err: any) {
+      console.error("Stripe webhook signature verification failed:", err.message);
+      return res.status(400).json({ error: `Webhook error: ${err.message}` });
+    }
+
+    async function getUserByCustomerId(customerId: string) {
+      const [user] = await db.select().from(users).where(eq(users.stripeCustomerId, customerId));
+      return user;
+    }
+
+    try {
+      switch (event.type) {
+        case "checkout.session.completed": {
+          const session = event.data.object as any;
+          const customerId = session.customer as string;
+          const subscriptionId = session.subscription as string;
+          if (!customerId || !subscriptionId) break;
+
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          const priceId = subscription.items.data[0]?.price?.id;
+          const planName = priceId ? PRICE_PLAN_MAP[priceId] : undefined;
+
+          const user = await getUserByCustomerId(customerId);
+          if (user && planName) {
+            await storage.updateUser(user.id, {
+              stripeCustomerId: customerId,
+              stripePlanId: subscriptionId,
+              planType: planName,
+            });
+          }
+          break;
+        }
+
+        case "customer.subscription.updated": {
+          const subscription = event.data.object as any;
+          const customerId = subscription.customer as string;
+          const priceId = subscription.items?.data?.[0]?.price?.id as string | undefined;
+          const planName = priceId ? PRICE_PLAN_MAP[priceId] : undefined;
+
+          const user = await getUserByCustomerId(customerId);
+          if (user) {
+            await storage.updateUser(user.id, {
+              stripePlanId: subscription.id,
+              ...(planName ? { planType: planName } : {}),
+            });
+          }
+          break;
+        }
+
+        case "customer.subscription.deleted": {
+          const subscription = event.data.object as any;
+          const customerId = subscription.customer as string;
+
+          const user = await getUserByCustomerId(customerId);
+          if (user) {
+            await storage.updateUser(user.id, {
+              stripePlanId: null,
+              planType: "free",
+            });
+          }
+          break;
+        }
+
+        default:
+          // Ignore other event types
+          break;
+      }
+    } catch (err) {
+      console.error("Stripe webhook handler error:", err);
+      return res.status(500).json({ error: "Webhook handler failed" });
+    }
+
+    res.json({ received: true });
   });
 
   // =====================
