@@ -116,6 +116,42 @@ export function setupAuth(app: Express) {
         password: await hashPassword(validatedData.password),
       });
 
+      // Send verification email (fire-and-forget — don't block registration)
+      try {
+        const verificationToken = randomBytes(32).toString("hex");
+        await storage.setEmailVerificationToken(user.id, verificationToken);
+
+        const appUrl = process.env.APP_URL || "https://ethical-review-builder.vercel.app";
+        const verifyUrl = `${appUrl}/verify-email?token=${verificationToken}`;
+        const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: `Ethical Review Builder <${fromEmail}>`,
+          to: user.email,
+          subject: "Verify your email address",
+          html: `
+            <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+              <h2 style="margin-bottom:8px">Verify your email</h2>
+              <p style="color:#555;margin-bottom:24px">
+                Thanks for signing up for Ethical Review Builder!
+                Click the button below to verify your email address.
+              </p>
+              <a href="${verifyUrl}"
+                 style="display:inline-block;background:#000;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600">
+                Verify Email
+              </a>
+              <p style="color:#999;font-size:13px;margin-top:24px">
+                If you didn't create this account, you can safely ignore this email.
+              </p>
+            </div>
+          `,
+        });
+      } catch (emailError) {
+        // Email failure should not block registration
+        console.error("Failed to send verification email:", emailError);
+      }
+
       // Log the user in
       req.login(user, (err) => {
         if (err) return next(err);
@@ -164,6 +200,37 @@ export function setupAuth(app: Express) {
     // Remove password from response
     const { password, ...userWithoutPassword } = req.user;
     res.json(userWithoutPassword);
+  });
+
+  // GET /api/verify-email?token=xxx — mark email as verified
+  app.get("/api/verify-email", async (req, res, next) => {
+    try {
+      const { token } = req.query;
+      if (!token || typeof token !== "string") {
+        return res.status(400).json({ error: "Verification token is required" });
+      }
+
+      const user = await storage.getUserByEmailVerificationToken(token);
+      if (!user) {
+        return res.status(400).json({ error: "Invalid or already used verification link" });
+      }
+
+      await storage.markEmailVerified(user.id);
+
+      // If user is already logged in, refresh their session data
+      if (req.isAuthenticated() && req.user.id === user.id) {
+        const updatedUser = await storage.getUser(user.id);
+        if (updatedUser) {
+          req.login(updatedUser, (err) => {
+            if (err) console.error("Session refresh error:", err);
+          });
+        }
+      }
+
+      res.json({ message: "Email verified successfully" });
+    } catch (error) {
+      next(error);
+    }
   });
 
   // POST /api/forgot-password — send reset email

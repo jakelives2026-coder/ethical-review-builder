@@ -20,6 +20,9 @@ export const users = pgTable("users", {
   // Password reset
   passwordResetToken: text("password_reset_token").unique(),
   passwordResetExpiresAt: timestamp("password_reset_expires_at"),
+  // Email verification
+  emailVerified: boolean("email_verified").default(false).notNull(),
+  emailVerificationToken: text("email_verification_token").unique(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

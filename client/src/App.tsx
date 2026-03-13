@@ -12,6 +12,7 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import ForgotPasswordPage from "@/pages/forgot-password-page";
 import ResetPasswordPage from "@/pages/reset-password-page";
+import VerifyEmailPage from "@/pages/verify-email-page";
 import Dashboard from "@/pages/dashboard";
 import SharedTemplatePage from "@/pages/shared-template-page";
 import PublicReview from "@/pages/public-review";
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
+      <Route path="/verify-email" component={VerifyEmailPage} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       
       {/* Shared template route */}
