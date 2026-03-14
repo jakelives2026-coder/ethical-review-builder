@@ -11,14 +11,13 @@ import { businessProfiles, reviewTemplates, users } from "@shared/schema";
 import { stripe } from "./stripe";
 import { PLAN_PRICE_MAP, PRICE_PLAN_MAP } from "./stripe-config";
 
+// AI generation limiter — 20 requests per 15 minutes per IP
 const generateReviewLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10,
+  windowMs: 15 * 60 * 1000,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    error: "Too many requests. You can generate up to 10 reviews per minute. Please wait and try again."
-  },
+  message: { error: "Too many requests. Please try again later." },
 });
 
 // Passport-based auth middleware

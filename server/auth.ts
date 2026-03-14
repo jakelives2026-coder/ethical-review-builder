@@ -2,12 +2,22 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
+import rateLimit from "express-rate-limit";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { Resend } from "resend";
+
+// Strict auth limiter — 10 requests per 15 minutes per IP
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please try again later." },
+});
 
 declare global {
   namespace Express {
@@ -94,7 +104,7 @@ export function setupAuth(app: Express) {
   });
 
   // Authentication routes
-  app.post("/api/register", async (req, res, next) => {
+  app.post("/api/register", authLimiter, async (req, res, next) => {
     try {
       // Validate registration data
       const validatedData = registerUserSchema.parse(req.body);
@@ -167,7 +177,7 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
+  app.post("/api/login", authLimiter, (req, res, next) => {
     passport.authenticate("local", (err: Error | null, user: any, info: { message: string } | undefined) => {
       if (err) return next(err);
       if (!user) {
@@ -234,7 +244,7 @@ export function setupAuth(app: Express) {
   });
 
   // POST /api/forgot-password — send reset email
-  app.post("/api/forgot-password", async (req, res, next) => {
+  app.post("/api/forgot-password", authLimiter, async (req, res, next) => {
     try {
       const { email } = req.body;
       if (!email || typeof email !== "string") {
@@ -285,7 +295,7 @@ export function setupAuth(app: Express) {
   });
 
   // POST /api/reset-password — validate token, update password
-  app.post("/api/reset-password", async (req, res, next) => {
+  app.post("/api/reset-password", authLimiter, async (req, res, next) => {
     try {
       const { token, password } = req.body;
       if (!token || !password) {
