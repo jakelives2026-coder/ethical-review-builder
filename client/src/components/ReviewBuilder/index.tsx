@@ -319,11 +319,8 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
       if (name !== undefined) {
         goToStep(Step.Complete);
       } else {
-        setFormData(prev => ({
-          ...prev,
-          generatedReview: "A placeholder review until the API is connected."
-        }));
-        setReviewReady(true);
+        // Return user to first question so they can retry
+        goToStep(Step.Question1);
       }
     }
   };
@@ -379,7 +376,9 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
 
   return (
     <div className="max-w-md mx-auto p-4 min-h-screen flex flex-col">
-      <ProgressIndicator currentStep={displayStep.current} totalSteps={displayStep.total} />
+      {visibleStep !== Step.Welcome && (
+        <ProgressIndicator currentStep={displayStep.current} totalSteps={displayStep.total} />
+      )}
       
       {renderRestartButton()}
       

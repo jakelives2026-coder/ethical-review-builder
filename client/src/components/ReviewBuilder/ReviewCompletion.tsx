@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Check, Copy, RotateCcw, Camera, Image } from "lucide-react";
+import { Check, Copy, RotateCcw, Camera, Image, Sparkles } from "lucide-react";
 import { BusinessInfo } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { 
-  getMobileTextStyles, 
+import { useAuth } from "@/hooks/use-auth";
+import {
+  getMobileTextStyles,
   getMobileButtonStyles,
   mobileLayoutSizes
 } from "@/lib/mobile-standards";
@@ -22,6 +23,7 @@ export function ReviewCompletion({ review, businessInfo, onStartOver }: ReviewCo
   const [showPhotoTips, setShowPhotoTips] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { isAuthenticated } = useAuth();
   
   const handleCopy = async () => {
     try {
@@ -167,8 +169,23 @@ export function ReviewCompletion({ review, businessInfo, onStartOver }: ReviewCo
         Find Business on Google
       </a>
       
+      {!isAuthenticated && (
+        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-center">
+          <Sparkles className="mx-auto mb-2 h-5 w-5 text-primary" />
+          <p className="mb-1 text-sm font-semibold text-neutral-800">Save this review to your account</p>
+          <p className="mb-3 text-xs text-neutral-500">Track all your reviews, manage multiple businesses, and generate unlimited reviews — free to start.</p>
+          <a
+            href="/auth?tab=register"
+            className={getMobileButtonStyles("block w-full flex items-center justify-center bg-primary text-white font-medium rounded-lg transition duration-200 hover:bg-primary/90")}
+          >
+            Create Free Account →
+          </a>
+        </div>
+      )}
+
       <Button
         onClick={onStartOver}
+        variant="outline"
         className={getMobileButtonStyles("w-full")}
       >
         <RotateCcw className="mr-2 h-4 w-4" /> Create Another Review
