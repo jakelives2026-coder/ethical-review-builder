@@ -86,7 +86,8 @@ export function Navbar() {
           ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                {/* min 44px touch target; avatar stays visually 32px inside */}
+                <Button variant="ghost" className="relative h-11 w-11 rounded-full">
                   <Avatar className="h-8 w-8">
                     {user.profileImageUrl && <AvatarImage src={user.profileImageUrl} alt={getDisplayName()} />}
                     <AvatarFallback>{getInitials()}</AvatarFallback>
@@ -118,7 +119,8 @@ export function Navbar() {
             </DropdownMenu>
           ) : (
             <div className="flex items-center gap-2">
-              <Link href="/auth">
+              {/* Hide Login on small screens to prevent overflow at 375px */}
+              <Link href="/auth" className="hidden sm:block">
                 <Button variant="outline">Login</Button>
               </Link>
               <Link href="/auth">

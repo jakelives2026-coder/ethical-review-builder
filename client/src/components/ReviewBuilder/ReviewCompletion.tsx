@@ -83,9 +83,9 @@ export function ReviewCompletion({ review, businessInfo, onStartOver }: ReviewCo
           <li>Paste your review and submit</li>
           <li className="flex items-start">
             <span className="mr-2">On Google, you can also include a photo with your review</span>
-            <button 
+            <button
               onClick={() => setShowPhotoTips(!showPhotoTips)}
-              className="text-xs underline text-primary-500 mt-0.5 flex-shrink-0"
+              className="text-xs underline text-primary-500 flex-shrink-0 py-1 px-1 -my-1 -mx-1"
               aria-label={showPhotoTips ? "Hide helpful tips" : "Show helpful tips"}
             >
               {showPhotoTips ? "Hide tips" : "Show tips"}

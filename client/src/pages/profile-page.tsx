@@ -98,13 +98,13 @@ export default function ProfilePage(): JSX.Element {
                 <Input
                   value={nameInput}
                   onChange={(e) => setNameInput(e.target.value)}
-                  className="h-8 text-sm"
+                  className="flex-1 min-w-0 text-sm"
                   placeholder="Your name"
                   autoFocus
                 />
                 <Button
                   size="sm"
-                  className="h-8 px-3"
+                  className="min-h-[40px] px-3 shrink-0"
                   onClick={() => updateName.mutate(nameInput)}
                   disabled={updateName.isPending}
                 >
@@ -113,7 +113,7 @@ export default function ProfilePage(): JSX.Element {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 px-2"
+                  className="min-h-[40px] min-w-[40px] px-2 shrink-0"
                   onClick={() => { setEditing(false); setNameInput(u.fullName ?? ""); }}
                 >
                   <X className="h-3.5 w-3.5" />
@@ -122,9 +122,10 @@ export default function ProfilePage(): JSX.Element {
             ) : (
               <div className="flex items-center gap-2">
                 <span className="text-sm">{u.fullName || <span className="text-muted-foreground italic">Not set</span>}</span>
+                {/* p-2 gives adequate 40px+ touch area around the small icon */}
                 <button
                   onClick={() => { setEditing(true); setNameInput(u.fullName ?? ""); }}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  className="p-2 -m-2 rounded text-muted-foreground hover:text-foreground transition-colors"
                   aria-label="Edit name"
                 >
                   <Pencil className="h-3.5 w-3.5" />
@@ -141,8 +142,8 @@ export default function ProfilePage(): JSX.Element {
             <Label className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5 block">
               Email
             </Label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">{u.email}</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-sm truncate min-w-0">{u.email}</span>
               {u.emailVerified ? (
                 <Badge variant="outline" className="gap-1 text-xs border-green-500/40 text-green-600 dark:text-green-400">
                   <CheckCircle2 className="h-3 w-3" />
@@ -200,7 +201,7 @@ export default function ProfilePage(): JSX.Element {
                   <span className="text-sm text-muted-foreground">/ {usageLimit}</span>
                 </div>
                 {/* Progress bar */}
-                <div className="h-1.5 w-48 rounded-full bg-muted overflow-hidden">
+                <div className="h-1.5 w-full max-w-[192px] rounded-full bg-muted overflow-hidden">
                   <div
                     className={cn(
                       "h-full rounded-full transition-all",
@@ -230,8 +231,7 @@ export default function ProfilePage(): JSX.Element {
               </Label>
               <Button
                 variant="outline"
-                size="sm"
-                className="gap-2"
+                className="gap-2 min-h-[44px]"
                 onClick={() => openPortal.mutate()}
                 disabled={openPortal.isPending}
               >

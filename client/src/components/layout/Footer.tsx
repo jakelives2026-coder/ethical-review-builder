@@ -10,19 +10,19 @@ export function Footer() {
           <p className="text-sm text-muted-foreground">
             © {currentYear} Ethical Review Builder. All rights reserved.
           </p>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             <Link href="/privacy">
-              <span className="text-sm text-muted-foreground hover:text-primary cursor-pointer transition-colors">
+              <span className="py-2 inline-block text-sm text-muted-foreground hover:text-primary cursor-pointer transition-colors">
                 Privacy Policy
               </span>
             </Link>
             <Link href="/terms">
-              <span className="text-sm text-muted-foreground hover:text-primary cursor-pointer transition-colors">
+              <span className="py-2 inline-block text-sm text-muted-foreground hover:text-primary cursor-pointer transition-colors">
                 Terms of Service
               </span>
             </Link>
             <Link href="/contact">
-              <span className="text-sm text-muted-foreground hover:text-primary cursor-pointer transition-colors">
+              <span className="py-2 inline-block text-sm text-muted-foreground hover:text-primary cursor-pointer transition-colors">
                 Contact
               </span>
             </Link>
