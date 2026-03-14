@@ -5,6 +5,7 @@ import { AuthProvider } from "@/hooks/use-auth.tsx";
 import { Toaster } from "@/components/ui/toaster";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { Analytics } from "@vercel/analytics/react";
 
 // Pages
 import Home from "@/pages/home";
@@ -56,6 +57,7 @@ function App() {
           <Router />
         </MainLayout>
         <Toaster />
+        <Analytics />
       </AuthProvider>
     </QueryClientProvider>
   );
