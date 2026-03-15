@@ -1067,9 +1067,9 @@ FINAL CHECK:
 - Is every detail from the responses, not made up?
 `;
       
-      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      // Using gpt-4o-mini for Vercel Hobby plan compatibility (10s function timeout — gpt-4o-mini completes in 2-4s)
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
