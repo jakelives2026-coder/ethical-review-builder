@@ -44,18 +44,22 @@ export function ProfileSettingsDialog({ isOpen, onClose, profile }: ProfileSetti
   const [activeTab, setActiveTab] = useState("branding");
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  
+
   // Branding state
   const [primaryColor, setPrimaryColor] = useState(profile.primaryColor || "#6366f1");
   const [accentColor, setAccentColor] = useState(profile.accentColor || "#8b5cf6");
   const [welcomeMessage, setWelcomeMessage] = useState(profile.welcomeMessage || "");
   const [logoUrl, setLogoUrl] = useState(profile.logoUrl || "");
-  
+
+  // Track the share slug locally so the UI updates immediately after generation
+  // without needing to close/reopen the dialog (profile prop can be stale)
+  const [localShareSlug, setLocalShareSlug] = useState<string | null>(profile.shareSlug || null);
+
   const isPaidPlan = user?.planType === 'pro' || user?.planType === 'enterprise';
   const isEnterprise = user?.planType === 'enterprise';
-  
-  const shareUrl = profile.shareSlug 
-    ? `${window.location.origin}/review/${profile.shareSlug}`
+
+  const shareUrl = localShareSlug
+    ? `${window.location.origin}/review/${localShareSlug}`
     : null;
   
   const embedCode = profile.embedToken && profile.isEmbedEnabled
@@ -101,9 +105,11 @@ export function ProfileSettingsDialog({ isOpen, onClose, profile }: ProfileSetti
   const handleGenerateShareLink = async () => {
     setIsLoading(true);
     try {
-      await apiRequest("POST", `/api/business-profiles/${profile.id}/share-slug`);
+      const res = await apiRequest("POST", `/api/business-profiles/${profile.id}/share-slug`);
+      const data: { shareSlug: string; shareUrl: string } = await res.json();
+      setLocalShareSlug(data.shareSlug);
       await queryClient.invalidateQueries({ queryKey: ["/api/business-profiles"] });
-      
+
       toast({
         title: "Share Link Generated",
         description: "Your shareable review link is ready."

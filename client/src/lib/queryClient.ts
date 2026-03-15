@@ -2,7 +2,9 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
+    // Clone before reading so the original stream stays open for callers
+    // that may call .json() on the returned response (prevents "body stream already read")
+    const text = (await res.clone().text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
 }

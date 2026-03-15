@@ -109,7 +109,11 @@
     "vite": "^5.4.14"
   },
   "optionalDependencies": {
-    "bufferutil": "^4.0.8"
+    "bufferutil": "^4.0.8",
+    "@rollup/rollup-linux-x64-gnu": "4.x",
+    "@rollup/rollup-linux-arm64-gnu": "4.x",
+    "@rollup/rollup-darwin-x64": "4.x",
+    "@rollup/rollup-darwin-arm64": "4.x"
   },
   "description": "AI-powered Google review generator for local service businesses"
 }

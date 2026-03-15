@@ -261,10 +261,11 @@ export default function Dashboard() {
                             Share
                           </Button>
                         )}
-                        <Button 
-                          variant="default" 
+                        <Button
+                          variant="default"
                           size={isMobile ? "default" : "sm"}
                           className={isMobile ? 'flex-1' : ''}
+                          onClick={() => window.location.href = `/?profileId=${profile.id}`}
                         >
                           <Star className="h-4 w-4 mr-2" />
                           Review
