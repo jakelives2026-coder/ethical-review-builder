@@ -14,6 +14,7 @@ import { JobStatusScreen } from "./JobStatusScreen";
 import { RestartButton } from "./RestartButton";
 import { Step, RelationshipType, BusinessType, BusinessInfo, ReviewData, ServiceLocationType } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { relationshipQuestions } from "@/lib/relationship-questions";
 import { getQuestionsForBusinessType, hasAppointmentFlows } from "@/lib/business-type-questions";
@@ -65,6 +66,7 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
   const [formData, setFormData] = useState<ReviewData>(initialState);
   const [reviewReady, setReviewReady] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Animation classes
   const [animationClass, setAnimationClass] = useState("");
@@ -76,8 +78,8 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
   // Persist step and form data to sessionStorage on every change
   useEffect(() => {
     if (currentStep === Step.Welcome) return;
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ step: currentStep, formData }));
-  }, [currentStep, formData]);
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ step: currentStep, formData, _userId: user?.id ?? null }));
+  }, [currentStep, formData, user?.id]);
 
   // Restore from sessionStorage on mount, falling back to default initialisation
   useEffect(() => {
@@ -85,11 +87,24 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
       try {
         const raw = sessionStorage.getItem(SESSION_KEY);
         if (raw) {
-          const { step, formData: savedData } = JSON.parse(raw) as { step: Step; formData: ReviewData };
-          setFormData(savedData);
-          setCurrentStep(step);
-          setVisibleStep(step);
-          return;
+          const parsedData = JSON.parse(raw) as { step: Step; formData: ReviewData; _userId?: number | null };
+
+          // Intentional: discard guest/foreign session if user identity has changed since
+          // the session was saved. Prevents stale anonymous data from leaking into an
+          // authenticated user's context.
+          const savedUserId = parsedData?._userId ?? null;
+          const currentUserId = user?.id ?? null;
+          if (savedUserId !== currentUserId) {
+            sessionStorage.removeItem(SESSION_KEY);
+            // Fall through to initialState path below — do NOT restore this stale data
+          } else {
+            // User identity matches (or both are null/undefined) — safe to restore
+            const { step, formData: savedData } = parsedData;
+            setFormData(savedData);
+            setCurrentStep(step);
+            setVisibleStep(step);
+            return;
+          }
         }
       } catch {
         sessionStorage.removeItem(SESSION_KEY);
@@ -105,7 +120,22 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
       setVisibleStep(Step.Welcome);
     }
   }, []);
-  
+
+  // Purge session data that doesn't belong to the current user whenever auth state changes
+  // mid-session (e.g., user logs in while wizard is already mounted)
+  useEffect(() => {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return;
+    try {
+      const saved = JSON.parse(raw) as { _userId?: number | null };
+      if ((saved._userId ?? null) !== (user?.id ?? null)) {
+        sessionStorage.removeItem(SESSION_KEY);
+      }
+    } catch {
+      sessionStorage.removeItem(SESSION_KEY);
+    }
+  }, [user?.id]);
+
   // Start the API call as soon as the Generating screen mounts
   useEffect(() => {
     if (visibleStep !== Step.Generating) return;
