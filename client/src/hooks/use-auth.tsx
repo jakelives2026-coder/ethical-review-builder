@@ -42,9 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = "/auth";
   };
 
-  const logout = () => {
+  const logout = async () => {
     queryClient.setQueryData(["/api/user"], null);
-    window.location.href = "/api/logout";
+    await fetch("/api/logout", { method: "POST", credentials: "include" });
+    window.location.href = "/";
   };
 
   return (
