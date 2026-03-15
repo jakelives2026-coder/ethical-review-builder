@@ -1421,7 +1421,7 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
       }
 
       const user = req.user!;
-      const appUrl = (process.env.APP_URL ?? "http://localhost:5000").trim();
+      const appUrl = (process.env.APP_URL ?? "http://localhost:5000").trim().replace(/\\n|\n|\r/g, '');
 
       // Retrieve or create Stripe customer
       let customerId = user.stripeCustomerId ?? undefined;
@@ -1456,7 +1456,7 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
   app.post("/api/stripe/create-portal-session", requireAuth, async (req, res) => {
     try {
       const user = req.user!;
-      const appUrl = (process.env.APP_URL ?? "http://localhost:5000").trim();
+      const appUrl = (process.env.APP_URL ?? "http://localhost:5000").trim().replace(/\\n|\n|\r/g, '');
 
       if (!user.stripeCustomerId) {
         return res.status(400).json({ error: "No Stripe customer found for this account" });

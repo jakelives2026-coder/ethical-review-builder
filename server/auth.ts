@@ -131,9 +131,9 @@ export function setupAuth(app: Express) {
         const verificationToken = randomBytes(32).toString("hex");
         await storage.setEmailVerificationToken(user.id, verificationToken);
 
-        const appUrl = (process.env.APP_URL || "https://ethical-review-builder.vercel.app").trim();
+        const appUrl = (process.env.APP_URL || "https://ethical-review-builder.vercel.app").trim().replace(/\\n|\n|\r/g, '');
         const verifyUrl = `${appUrl}/verify-email?token=${verificationToken}`;
-        const fromEmail = (process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev").trim();
+        const fromEmail = (process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev").trim().replace(/\\n|\n|\r/g, '');
 
         const resend = new Resend(process.env.RESEND_API_KEY);
         await resend.emails.send({
@@ -261,9 +261,9 @@ export function setupAuth(app: Express) {
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
       await storage.setPasswordResetToken(user.id, token, expiresAt);
 
-      const appUrl = (process.env.APP_URL || "https://ethical-review-builder.vercel.app").trim();
+      const appUrl = (process.env.APP_URL || "https://ethical-review-builder.vercel.app").trim().replace(/\\n|\n|\r/g, '');
       const resetUrl = `${appUrl}/reset-password?token=${token}`;
-      const fromEmail = (process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev").trim();
+      const fromEmail = (process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev").trim().replace(/\\n|\n|\r/g, '');
 
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
