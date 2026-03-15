@@ -62,20 +62,28 @@ export function ReviewPreview({ review, onNext, onBack, relationshipType, busine
     return cleanedText.trim();
   };
   
+  // Scroll review text to top when mounted or content changes
+  useEffect(() => {
+    if (reviewRef.current && editedReview) {
+      // Scroll to top of the review card
+      reviewRef.current.scrollTop = 0;
+    }
+  }, [editedReview]);
+
   // Check for fake signatures
   useEffect(() => {
     if (editedReview) {
       // Check if the review has a fake signature
-      const containsFakeName = fakeNamePatterns.some(namePattern => 
+      const containsFakeName = fakeNamePatterns.some(namePattern =>
         namePattern.test(editedReview.trim())
       );
-      
+
       if (containsFakeName) {
         setHasFakeName(true);
         // Remove the fake signature
         const cleanedReview = cleanFakeSignatures(editedReview);
         setEditedReview(cleanedReview);
-        
+
         toast({
           title: "Fake signature detected",
           description: "We've removed an AI-generated name signature that wasn't provided by you.",

@@ -241,22 +241,39 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
   };
   
   // Map internal step IDs to user-facing step numbers
+  // CRITICAL FIX: Calculate total ONCE based on known relationship, not dynamically
   const getDisplayStep = (internalStep: Step): { current: number; total: number } => {
-    const questionCount = getQuestionCount(formData.relationship);
-    // For acquaintance: skip service location so total is 5 + questions
-    // For others: 1(type) + 1(relationship) + 1(location) + 1(business) + questions + 1(generating) + 1(complete) = 6 + questions
+    // Calculate total steps:
+    // - Always show: BusinessType (1) + Relationship (1) + BusinessInfo (1) + Generating (1) + Complete (1) = 5
+    // - Conditional: ServiceLocation (1) only if not acquaintance = +1 for non-acquaintance
+    // - Variable: Questions count depends on relationship & businessType
+    const questionCount = formData.relationship ? getQuestionCount(formData.relationship) : 3; // Default to 3 if no relationship yet
     const hasServiceLocation = formData.relationship && formData.relationship !== "acquaintance";
+    // FIXED: Total is consistent once relationship is known
+    // For acquaintance: 1(type) + 1(relationship) + 1(business) + questions + 1(generating) + 1(complete) = 5 + questions
+    // For others: 1(type) + 1(relationship) + 1(location) + 1(business) + questions + 1(generating) + 1(complete) = 6 + questions
     const total = hasServiceLocation ? 6 + questionCount : 5 + questionCount;
 
-    if (internalStep === Step.Welcome) return { current: 1, total };
-    if (internalStep === Step.BusinessType) return { current: 1, total };
-    if (internalStep === Step.Relationship || internalStep === Step.AppointmentStatus || internalStep === Step.JobStatus) return { current: 2, total };
-    if (internalStep === Step.ServiceLocation) return { current: 3, total };
-    if (internalStep === Step.BusinessInfo) return { current: hasServiceLocation ? 4 : 3, total };
-    if (internalStep >= Step.Question1 && internalStep <= Step.Question4) return { current: (hasServiceLocation ? internalStep + 1 : internalStep), total };
-    if (internalStep === Step.Generating || internalStep === Step.Preview) return { current: (hasServiceLocation ? 5 : 4) + questionCount, total };
-    if (internalStep === Step.Complete) return { current: total, total };
-    return { current: 1, total };
+    // Map each step to its display number
+    let current = 1;
+    if (internalStep === Step.Welcome || internalStep === Step.BusinessType) {
+      current = 1;
+    } else if (internalStep === Step.Relationship || internalStep === Step.AppointmentStatus || internalStep === Step.JobStatus) {
+      current = 2;
+    } else if (internalStep === Step.ServiceLocation) {
+      current = 3; // Only shown for non-acquaintance
+    } else if (internalStep === Step.BusinessInfo) {
+      current = hasServiceLocation ? 4 : 3;
+    } else if (internalStep >= Step.Question1 && internalStep <= Step.Question4) {
+      const questionIndex = internalStep - Step.Question1 + 1;
+      current = (hasServiceLocation ? 4 : 3) + questionIndex;
+    } else if (internalStep === Step.Generating || internalStep === Step.Preview) {
+      current = (hasServiceLocation ? 5 : 4) + questionCount;
+    } else if (internalStep === Step.Complete) {
+      current = total;
+    }
+
+    return { current, total };
   };
   
   const displayStep = getDisplayStep(currentStep);
