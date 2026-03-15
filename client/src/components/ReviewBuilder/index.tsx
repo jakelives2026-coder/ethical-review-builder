@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { WelcomeScreen } from "./WelcomeScreen";
 import { BusinessTypeScreen } from "./BusinessTypeScreen";
 import { RelationshipTypeScreen } from "./RelationshipType";
@@ -66,7 +66,8 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
   const [formData, setFormData] = useState<ReviewData>(initialState);
   const [reviewReady, setReviewReady] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+  const hasRestoredSession = useRef(false);
 
   // Animation classes
   const [animationClass, setAnimationClass] = useState("");
@@ -83,6 +84,10 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
 
   // Restore from sessionStorage on mount, falling back to default initialisation
   useEffect(() => {
+    if (isLoading) return;              // wait for auth to resolve first
+    if (hasRestoredSession.current) return;  // only restore once
+    hasRestoredSession.current = true;
+
     if (!hasPrefillData) {
       try {
         const raw = sessionStorage.getItem(SESSION_KEY);
@@ -119,22 +124,33 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
       setCurrentStep(Step.Welcome);
       setVisibleStep(Step.Welcome);
     }
-  }, []);
+  }, [isLoading, user?.id]);
 
   // Purge session data that doesn't belong to the current user whenever auth state changes
   // mid-session (e.g., user logs in while wizard is already mounted)
   useEffect(() => {
+    if (isLoading) return;
+
     const raw = sessionStorage.getItem(SESSION_KEY);
     if (!raw) return;
     try {
       const saved = JSON.parse(raw) as { _userId?: number | null };
       if ((saved._userId ?? null) !== (user?.id ?? null)) {
         sessionStorage.removeItem(SESSION_KEY);
+        // Reset React state to match cleared session
+        setFormData(initialState);
+        if (prefillData?.businessType) {
+          setCurrentStep(Step.Relationship);
+          setVisibleStep(Step.Relationship);
+        } else {
+          setCurrentStep(Step.Welcome);
+          setVisibleStep(Step.Welcome);
+        }
       }
     } catch {
       sessionStorage.removeItem(SESSION_KEY);
     }
-  }, [user?.id]);
+  }, [user?.id, isLoading]);
 
   // Start the API call as soon as the Generating screen mounts
   useEffect(() => {
