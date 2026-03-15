@@ -305,17 +305,67 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
     if (!formData.relationship) return;
 
     try {
-      const response = await apiRequest("POST", "/api/generate-review", {
-        relationshipType: formData.relationship,
-        businessType: formData.businessType,
-        serviceLocation: formData.serviceLocation,
-        businessName: formData.businessInfo.businessName,
-        businessLocation: formData.businessInfo.businessLocation,
-        businessService: formData.businessInfo.businessService,
-        representativeName: formData.businessInfo.representativeName,
-        answers: formData.answers[formData.relationship],
-        userName: name !== undefined ? name.trim() : formData.userName,
+      const response = await fetch("/api/generate-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          relationshipType: formData.relationship,
+          businessType: formData.businessType,
+          serviceLocation: formData.serviceLocation,
+          businessName: formData.businessInfo.businessName,
+          businessLocation: formData.businessInfo.businessLocation,
+          businessService: formData.businessInfo.businessService,
+          representativeName: formData.businessInfo.representativeName,
+          answers: formData.answers[formData.relationship],
+          userName: name !== undefined ? name.trim() : formData.userName,
+        })
       });
+
+      if (!response.ok) {
+        // Handle specific error codes
+        if (response.status === 403) {
+          try {
+            const errorData = await response.json();
+            const { error: errorMessage, upgradeUrl } = errorData;
+
+            toast({
+              title: "Free reviews limit reached",
+              description: errorMessage || "You've used all your free reviews. Upgrade to Pro for unlimited reviews.",
+              variant: "destructive",
+              action: upgradeUrl ? (
+                <button
+                  onClick={() => window.location.href = upgradeUrl}
+                  className="bg-primary text-white px-3 py-1 rounded text-sm font-medium hover:bg-primary/90"
+                >
+                  Upgrade
+                </button>
+              ) : undefined
+            });
+            // Do NOT reset the wizard for rate-limit errors
+            return;
+          } catch {
+            // If JSON parsing fails, show generic message
+            toast({
+              title: "Free reviews limit reached",
+              description: "You've used all your free reviews. Upgrade to Pro for unlimited reviews.",
+              variant: "destructive",
+              action: (
+                <button
+                  onClick={() => window.location.href = "/pricing"}
+                  className="bg-primary text-white px-3 py-1 rounded text-sm font-medium hover:bg-primary/90"
+                >
+                  Upgrade
+                </button>
+              )
+            });
+            return;
+          }
+        }
+
+        // Handle other HTTP errors
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
 
       const data = await response.json();
 
