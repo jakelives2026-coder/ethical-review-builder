@@ -118,13 +118,12 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="flex items-center gap-2">
-              {/* Hide Login on small screens to prevent overflow at 375px */}
-              <Link href="/auth" className="hidden sm:block">
-                <Button variant="outline">Login</Button>
+            <div className="flex items-center gap-1">
+              <Link href="/auth">
+                <Button variant="ghost" size="sm">Login</Button>
               </Link>
               <Link href="/auth">
-                <Button>Sign up</Button>
+                <Button size="sm">Sign up</Button>
               </Link>
             </div>
           )}

@@ -44,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     queryClient.setQueryData(["/api/user"], null);
+    sessionStorage.removeItem("reviewBuilder_state");
     await fetch("/api/logout", { method: "POST", credentials: "include" });
     window.location.href = "/";
   };
