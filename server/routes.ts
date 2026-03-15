@@ -40,8 +40,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize OpenAI
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY || "",
-    timeout: 30000, // 30 second timeout for OpenAI SDK
-    maxRetries: 1,
+    timeout: 30000,
+    maxRetries: 2,
   });
 
   // Debug endpoint to check if env var is loaded
