@@ -66,13 +66,36 @@ export interface IStorage {
   deleteReview(id: number): Promise<boolean>;
 }
 
+// Ensures the session table and index exist using IF NOT EXISTS so cold starts
+// don't crash when connect-pg-simple tries to re-create an existing index.
+export async function ensureSessionTable(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "session" (
+        "sid" varchar NOT NULL COLLATE "default",
+        "sess" json NOT NULL,
+        "expire" timestamp(6) NOT NULL,
+        CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE
+      ) WITH (OIDS=FALSE);
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+    `);
+  } finally {
+    client.release();
+  }
+}
+
 export class DatabaseStorage implements IStorage {
   sessionStore: any;
-  
+
   constructor() {
-    this.sessionStore = new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true 
+    // createTableIfMissing: false — we handle session table creation ourselves
+    // in ensureSessionTable() with proper IF NOT EXISTS to avoid cold-start crashes.
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: false
     });
   }
 

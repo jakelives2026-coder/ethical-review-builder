@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import rateLimit from "express-rate-limit";
-import { storage } from "./storage";
+import { storage, ensureSessionTable } from "./storage";
 import OpenAI from "openai";
 import { setupAuth } from "./auth";
 import { z } from "zod";
@@ -33,6 +33,10 @@ function requirePremiumPlan(req: Request, res: Response, next: NextFunction) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Ensure session table exists with IF NOT EXISTS — prevents cold-start crashes
+  // when connect-pg-simple tries to re-create an already existing index.
+  await ensureSessionTable();
+
   // Initialize OpenAI
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY || "",
