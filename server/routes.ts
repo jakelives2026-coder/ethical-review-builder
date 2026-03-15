@@ -1096,13 +1096,8 @@ FINAL CHECK:
 - Is every detail from the responses, not made up?
 `;
       
-      // Using gpt-4o-mini for Vercel Hobby plan compatibility (10s function timeout — gpt-4o-mini completes in 2-4s)
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: `You write Google reviews that sound like real people wrote them.
+      // Use native fetch directly — bypasses OpenAI SDK connection handling (resolves Vercel runtime issues)
+      const systemPrompt = `You write Google reviews that sound like real people wrote them.
 
 CORE IDENTITY:
 - You write like a regular person, not a marketing department
@@ -1127,18 +1122,32 @@ ABSOLUTE RULES:
 - Match the relationship type's tense (future for upcoming, past for completed)
 - If a representative name is provided, mention them naturally in the review
 
-${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but maintain the same natural tone. Stay under 4000 characters." : ""}`
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.65,
-        max_tokens: maxTokens
+${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but maintain the same natural tone. Stay under 4000 characters." : ""}`;
+
+      const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.65,
+          max_tokens: maxTokens
+        })
       });
-      
-      const review = response.choices[0].message.content?.trim() || 
+
+      if (!openaiRes.ok) {
+        const errText = await openaiRes.text();
+        throw new Error(`OpenAI API returned ${openaiRes.status}: ${errText}`);
+      }
+
+      const openaiData = await openaiRes.json() as { choices: Array<{ message: { content: string } }> };
+      const review = openaiData.choices[0]?.message?.content?.trim() ||
         "We couldn't generate a review at this time. Please try again.";
         
       // If the user is authenticated and specified business profile and/or template ID
