@@ -40,6 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize OpenAI
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY || "",
+    timeout: 50000, // 50 second timeout
   });
 
   // Set up session, passport, and auth routes (/api/login, /api/logout, /api/register, /api/user)
