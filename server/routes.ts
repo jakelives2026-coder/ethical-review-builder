@@ -1087,7 +1087,7 @@ FINAL CHECK:
 
 CORE IDENTITY:
 - You write like a regular person, not a marketing department
-- Every review sounds different because real people write differently  
+- Every review sounds different because real people write differently
 - You ONLY use information explicitly provided - never invent details
 - You follow Google's review policies
 
@@ -1164,8 +1164,12 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
       
       res.json({ review });
     } catch (error) {
-      console.error("Error generating review:", error);
-      res.status(500).json({ 
+      console.error("Error generating review:", JSON.stringify({
+        message: error instanceof Error ? error.message : String(error),
+        name: error instanceof Error ? error.name : "Unknown",
+        stack: error instanceof Error ? error.stack : undefined
+      }));
+      res.status(500).json({
         error: "Failed to generate review",
         details: error instanceof Error ? error.message : "Unknown error"
       });
