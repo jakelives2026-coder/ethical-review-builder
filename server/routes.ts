@@ -53,6 +53,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Debug endpoint to test simple OpenAI API call
+  app.get("/api/test-openai", async (_req, res) => {
+    try {
+      const result = await openai.models.list();
+      res.json({
+        success: true,
+        modelsCount: result.data?.length || 0,
+        firstModel: result.data?.[0]?.id || "unknown"
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        type: error instanceof Error ? error.name : "Unknown"
+      });
+    }
+  });
+
   // Set up session, passport, and auth routes (/api/login, /api/logout, /api/register, /api/user)
   setupAuth(app);
 
