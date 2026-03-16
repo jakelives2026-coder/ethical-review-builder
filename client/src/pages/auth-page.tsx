@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,10 +36,22 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { user, isLoading } = useAuth();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
 
   useEffect(() => {
     if (user) setLocation(user.hasOnboarded ? "/dashboard" : "/onboarding");
   }, [user, setLocation]);
+
+  // Read tab parameter from URL search params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("tab");
+    if (tabParam === "register") {
+      setActiveTab("register");
+    } else {
+      setActiveTab("login");
+    }
+  }, []);
 
   const loginForm = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -125,7 +137,7 @@ export default function AuthPage() {
             </p>
           </div>
 
-          <Tabs defaultValue="login">
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "login" | "register")}>
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="login">Sign In</TabsTrigger>
               <TabsTrigger value="register">Create Account</TabsTrigger>
