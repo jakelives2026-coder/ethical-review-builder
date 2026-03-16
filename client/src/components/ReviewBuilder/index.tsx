@@ -162,12 +162,15 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
 
   const goToStep = (step: Step) => {
     setAnimationClass("slide-out");
-    
+
     setTimeout(() => {
       setCurrentStep(step);
       setAnimationClass("slide-in");
       setVisibleStep(step);
-      
+
+      // Scroll to top smoothly when step changes
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
       setTimeout(() => {
         setAnimationClass("");
       }, 400);

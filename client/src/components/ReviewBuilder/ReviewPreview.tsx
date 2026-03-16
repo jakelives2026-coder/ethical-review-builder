@@ -376,7 +376,7 @@ export function ReviewPreview({ review, onNext, onBack, relationshipType, busine
       
       <div className={mobileLayoutSizes.sectionSpacing}>
         <h2 className={getMobileTextStyles("heading", "font-bold text-neutral-800 mb-3")}>
-          Your Google Review
+          Your Generated Review
         </h2>
         <p className={getMobileTextStyles("body", "text-neutral-600 mb-6")}>
           Here's your 5-star review based on your responses
@@ -535,14 +535,12 @@ export function ReviewPreview({ review, onNext, onBack, relationshipType, busine
             <Button
               variant="outline"
               onClick={onBack}
-              className={getMobileButtonStyles("flex items-center")}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
-            
+
             <Button
               onClick={handleNext}
-              className={getMobileButtonStyles("flex items-center")}
             >
               Looks Good! <Check className="ml-2 h-4 w-4" />
             </Button>

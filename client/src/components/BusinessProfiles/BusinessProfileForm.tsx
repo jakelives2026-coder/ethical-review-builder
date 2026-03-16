@@ -26,20 +26,12 @@ import {
   DialogDescription 
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { GooglePlacesBusinessInput, GooglePlacesAddressInput } from "@/components/ui/google-places-input";
-import { 
-  getMobileTextStyles, 
-  getMobileButtonStyles,
-  getMobileButtonContainerStyles,
-  getMobileInputStyles
-} from "@/lib/mobile-standards";
+import { FormInput, FormSelect, AutocompleteField } from "@/components/primitives";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  getMobileTextStyles,
+  getMobileButtonStyles,
+  getMobileButtonContainerStyles
+} from "@/lib/mobile-standards";
 
 // Business type options with labels
 const businessTypes = [
@@ -327,18 +319,17 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                       </Badge>
                     </div>
                     <FormControl>
-                      <GooglePlacesBusinessInput
-                        onBusinessSelect={(business) => {
+                      <AutocompleteField
+                        type="business"
+                        onSelect={(business) => {
                           field.onChange(business.businessName);
                           if (business.formattedAddress) {
                             form.setValue("businessLocation", business.formattedAddress);
                           }
                         }}
-                        className={`${getMobileInputStyles()} border-primary/20 focus:border-primary`}
                         placeholder="Search for your business..."
                         defaultValue={field.value}
                         required={true}
-                        onFocus={handleInputFocus}
                         autoFocus={!editData}
                       />
                     </FormControl>
@@ -368,16 +359,15 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                       </Badge>
                     </div>
                     <FormControl>
-                      <GooglePlacesAddressInput 
-                        defaultValue={field.value} 
-                        onAddressSelect={(address) => {
+                      <AutocompleteField
+                        type="address"
+                        defaultValue={field.value}
+                        onSelect={(address) => {
                           field.onChange(address);
                           form.trigger("businessLocation");
                         }}
-                        placeholder="Search for address..." 
-                        className={`${getMobileInputStyles()} border-primary/20 focus:border-primary`}
+                        placeholder="Search for address..."
                         required={true}
-                        onFocus={handleInputFocus}
                       />
                     </FormControl>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -401,20 +391,14 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                         Business Type
                       </FormLabel>
                     </div>
-                    <Select onValueChange={field.onChange} defaultValue={field.value || "other"}>
-                      <FormControl>
-                        <SelectTrigger className={`${getMobileInputStyles()} border-primary/20 focus:border-primary`}>
-                          <SelectValue placeholder="Select business type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {businessTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <FormSelect
+                        value={field.value || "other"}
+                        onValueChange={field.onChange}
+                        placeholder="Select business type"
+                        options={businessTypes}
+                      />
+                    </FormControl>
                     <p className="text-xs text-muted-foreground mt-1">
                       This helps tailor the review questions for your industry
                     </p>
@@ -440,11 +424,10 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                         </FormLabel>
                       </div>
                       <FormControl>
-                        <Input 
+                        <FormInput
                           placeholder=""
-                          {...field} 
+                          {...field}
                           value={field.value || ""}
-                          className={`${getMobileInputStyles()} border-primary/20 focus:border-primary`}
                           onFocus={handleInputFocus}
                         />
                       </FormControl>
@@ -471,11 +454,10 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                       </FormLabel>
                     </div>
                     <FormControl>
-                      <Input 
-                        placeholder="" 
-                        {...field} 
+                      <FormInput
+                        placeholder=""
+                        {...field}
                         value={field.value || ""}
-                        className={`${getMobileInputStyles()} border-primary/20 focus:border-primary`}
                         onFocus={handleInputFocus}
                       />
                     </FormControl>
@@ -521,14 +503,14 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className={`${getMobileButtonStyles()} text-base h-12 border-2`}
+                className="flex-1 border-2"
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting} 
-                className={`${getMobileButtonStyles()} text-base h-12 font-medium`}
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-1 font-medium"
               >
                 {isSubmitting ? (
                   <>

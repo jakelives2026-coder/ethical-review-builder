@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { FormInput } from "@/components/primitives";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, ArrowRight, HelpCircle } from "lucide-react";
@@ -63,21 +64,13 @@ export function BusinessInfoScreen({ initialData, onNext, onBack }: BusinessInfo
         </p>
         
         <div className="space-y-5">
-          <div className="form-group">
-            <Label 
-              htmlFor="business-name" 
-              className={getMobileTextStyles("label", "font-medium text-neutral-700 mb-2 block")}
-            >
-              Business Name
-            </Label>
-            <Input 
-              id="business-name" 
-              value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
-              className={getMobileInputStyles()}
-              placeholder="e.g. Joe's Coffee Shop"
-            />
-          </div>
+          <FormInput
+            label="Business Name"
+            id="business-name"
+            value={businessName}
+            onChange={(e) => setBusinessName(e.target.value)}
+            placeholder="e.g. Joe's Coffee Shop"
+          />
           
           <div className="form-group">
             <div className="flex items-center gap-2 mb-2">
@@ -106,21 +99,13 @@ export function BusinessInfoScreen({ initialData, onNext, onBack }: BusinessInfo
             />
           </div>
           
-          <div className="form-group">
-            <Label 
-              htmlFor="business-service" 
-              className={getMobileTextStyles("label", "font-medium text-neutral-700 mb-2 block")}
-            >
-              Service or Product
-            </Label>
-            <Input 
-              id="business-service" 
-              value={businessService}
-              onChange={(e) => setBusinessService(e.target.value)}
-              className={getMobileInputStyles()}
-              placeholder="e.g. Hair salon, Plumbing services"
-            />
-          </div>
+          <FormInput
+            label="Service or Product"
+            id="business-service"
+            value={businessService}
+            onChange={(e) => setBusinessService(e.target.value)}
+            placeholder="e.g. Hair salon, Plumbing services"
+          />
           
           <div className="form-group">
             <div className="flex items-center gap-2 mb-2">
@@ -180,15 +165,13 @@ export function BusinessInfoScreen({ initialData, onNext, onBack }: BusinessInfo
             <Button
               variant="outline"
               onClick={onBack}
-              className={getMobileButtonStyles("flex items-center")}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
-            
+
             <Button
               onClick={handleSubmit}
               disabled={!isValid}
-              className={getMobileButtonStyles("flex items-center")}
             >
               Continue <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

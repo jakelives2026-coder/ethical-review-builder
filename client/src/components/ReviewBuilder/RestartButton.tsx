@@ -19,7 +19,7 @@ export function RestartButton({ onRestart }: RestartButtonProps) {
         variant="ghost"
         size="sm"
         onClick={() => setShowConfirmDialog(true)}
-        className={`text-gray-500 hover:text-gray-700 ${getMobileButtonStyles()}`}
+        className="text-gray-500 hover:text-gray-700"
       >
         <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
         Restart

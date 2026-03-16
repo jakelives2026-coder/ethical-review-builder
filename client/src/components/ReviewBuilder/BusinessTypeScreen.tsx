@@ -89,15 +89,13 @@ export function BusinessTypeScreen({ onNext, onBack, initialValue }: BusinessTyp
             <Button
               variant="outline"
               onClick={onBack}
-              className={getMobileButtonStyles("flex items-center")}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
-            
+
             <Button
               onClick={handleNext}
               disabled={!selectedType}
-              className={getMobileButtonStyles("flex items-center")}
             >
               Continue <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

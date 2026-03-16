@@ -6,6 +6,7 @@ import { BusinessInfo } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
+import { AuthGate } from "./AuthGate";
 import {
   getMobileTextStyles,
   getMobileButtonStyles,
@@ -21,9 +22,10 @@ interface ReviewCompletionProps {
 export function ReviewCompletion({ review, businessInfo, onStartOver }: ReviewCompletionProps) {
   const [copied, setCopied] = useState(false);
   const [showPhotoTips, setShowPhotoTips] = useState(false);
+  const [showAuthGate, setShowAuthGate] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   
   const handleCopy = async () => {
     try {
@@ -47,7 +49,12 @@ export function ReviewCompletion({ review, businessInfo, onStartOver }: ReviewCo
   const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(
     `${businessInfo.businessName} ${businessInfo.businessService} ${businessInfo.businessLocation}`
   )}`;
-  
+
+  // Show auth gate if user is not authenticated and trying to access
+  if (!isAuthenticated && showAuthGate) {
+    return <AuthGate onAuthSuccess={() => setShowAuthGate(false)} />;
+  }
+
   return (
     <div className={mobileLayoutSizes.containerPadding}>
       <h2 className={getMobileTextStyles("heading", "font-bold text-neutral-800 mb-3 text-center")}>
@@ -55,7 +62,7 @@ export function ReviewCompletion({ review, businessInfo, onStartOver }: ReviewCo
       </h2>
       
       <Card className="bg-white rounded-xl shadow-md p-4 mb-6">
-        <div id="reviewOutput" className="text-neutral-700 mb-4 text-left whitespace-pre-wrap bg-[#f9f9f9] p-4 rounded-md">
+        <div id="reviewOutput" className="text-neutral-700 mb-4 text-left whitespace-pre-wrap border border-border rounded-lg bg-muted/20 p-4">
           {review}
         </div>
         
@@ -152,11 +159,11 @@ export function ReviewCompletion({ review, businessInfo, onStartOver }: ReviewCo
         </div>
       </div>
       
-      <a 
+      <a
         href={googleSearchUrl}
-        target="_blank" 
+        target="_blank"
         rel="noopener noreferrer"
-        className={`${getMobileButtonStyles("block w-full flex items-center justify-center mb-4")} bg-white border border-neutral-300 text-neutral-800 font-medium rounded-lg transition duration-200 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-300`}
+        className="w-full flex items-center justify-center mb-4 bg-white border border-neutral-300 text-neutral-800 font-medium rounded-lg transition duration-200 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-300 px-4 py-3 min-h-[44px]"
       >
         <svg className="h-6 mr-2" viewBox="0 0 272 92" xmlns="http://www.w3.org/2000/svg">
           <path d="M115.75 47.18c0 12.77-9.99 22.18-22.25 22.18s-22.25-9.41-22.25-22.18C71.25 34.32 81.24 25 93.5 25s22.25 9.32 22.25 22.18zm-9.74 0c0-7.98-5.79-13.44-12.51-13.44S80.99 39.2 80.99 47.18c0 7.9 5.79 13.44 12.51 13.44s12.51-5.55 12.51-13.44z" fill="#EA4335"/>
@@ -174,12 +181,12 @@ export function ReviewCompletion({ review, businessInfo, onStartOver }: ReviewCo
           <Sparkles className="mx-auto mb-2 h-5 w-5 text-primary" />
           <p className="mb-1 text-sm font-semibold text-neutral-800">Save this review to your account</p>
           <p className="mb-3 text-xs text-neutral-500">Track all your reviews, manage multiple businesses, and generate unlimited reviews — free to start.</p>
-          <a
-            href="/auth?tab=register"
-            className={getMobileButtonStyles("block w-full flex items-center justify-center bg-primary text-white font-medium rounded-lg transition duration-200 hover:bg-primary/90")}
+          <Button
+            onClick={() => setShowAuthGate(true)}
+            className={getMobileButtonStyles("w-full")}
           >
-            Create Free Account →
-          </a>
+            Create Free Account or Sign In →
+          </Button>
         </div>
       )}
 

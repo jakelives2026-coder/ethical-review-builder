@@ -115,15 +115,13 @@ export function AppointmentStatusScreen({ onNext, onBack }: AppointmentStatusScr
             <Button
               variant="outline"
               onClick={onBack}
-              className={getMobileButtonStyles("flex items-center")}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
-            
+
             <Button
               onClick={handleContinue}
               disabled={!selectedStatus}
-              className={getMobileButtonStyles("flex items-center")}
             >
               Continue <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

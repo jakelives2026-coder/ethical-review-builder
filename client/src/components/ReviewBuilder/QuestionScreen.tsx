@@ -135,15 +135,13 @@ export function QuestionScreen({
             <Button
               variant="outline"
               onClick={onBack}
-              className={getMobileButtonStyles("flex items-center")}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
-            
+
             <Button
               onClick={handleSubmit}
               disabled={!isValid}
-              className={getMobileButtonStyles("flex items-center")}
             >
               {isLastQuestion ? (
                 <>Generate Review <Sparkles className="ml-2 h-4 w-4" /></>
