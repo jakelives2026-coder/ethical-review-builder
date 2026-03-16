@@ -47,6 +47,7 @@
     "@tanstack/react-query": "^5.60.5",
     "@types/google.maps": "^3.58.1",
     "@types/memoizee": "^0.4.12",
+    "@types/passport-google-oauth20": "^2.0.17",
     "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -67,6 +68,7 @@
     "openai": "^4.95.1",
     "openid-client": "^6.8.1",
     "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "passport-local": "^1.0.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
@@ -109,11 +111,11 @@
     "vite": "^5.4.14"
   },
   "optionalDependencies": {
-    "bufferutil": "^4.0.8",
-    "@rollup/rollup-linux-x64-gnu": "4.x",
-    "@rollup/rollup-linux-arm64-gnu": "4.x",
+    "@rollup/rollup-darwin-arm64": "4.x",
     "@rollup/rollup-darwin-x64": "4.x",
-    "@rollup/rollup-darwin-arm64": "4.x"
+    "@rollup/rollup-linux-arm64-gnu": "4.x",
+    "@rollup/rollup-linux-x64-gnu": "4.x",
+    "bufferutil": "^4.0.8"
   },
   "description": "AI-powered Google review generator for local service businesses"
 }

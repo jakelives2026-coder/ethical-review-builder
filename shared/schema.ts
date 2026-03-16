@@ -7,7 +7,7 @@ import { relations } from "drizzle-orm";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"), // Nullable for OAuth users
   email: text("email").notNull().unique(),
   fullName: text("full_name"),
   company: text("company"),
@@ -17,6 +17,8 @@ export const users = pgTable("users", {
   // Replit Auth OIDC user ID (sub claim) for linking to auth provider
   authId: text("auth_id").unique(),
   profileImageUrl: text("profile_image_url"),
+  // Google OAuth
+  googleId: text("google_id").unique(),
   // Password reset
   passwordResetToken: text("password_reset_token").unique(),
   passwordResetExpiresAt: timestamp("password_reset_expires_at"),
@@ -39,6 +41,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   fullName: true,
   company: true,
+  googleId: true,
+  emailVerified: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
