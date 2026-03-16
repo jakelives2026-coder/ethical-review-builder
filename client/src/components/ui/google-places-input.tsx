@@ -280,6 +280,7 @@ export function GooglePlacesBusinessInput({
   const [selectedPlace, setSelectedPlace] = useState<PlaceResult | null>(null);
   const [isManualMode, setIsManualMode] = useState(false);
   const [apiError, setApiError] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [shouldAutoFocus, setShouldAutoFocus] = useState(autoFocus);
   
   const inputRef = useRef<HTMLInputElement>(null);
@@ -332,11 +333,13 @@ export function GooglePlacesBusinessInput({
   const searchPlaces = useCallback((query: string) => {
     if (!autocompleteServiceRef.current || query.length < 2) {
       setPredictions([]);
+      setSearchError(null);
       return;
     }
-    
+
     setIsLoading(true);
-    
+    setSearchError(null);
+
     autocompleteServiceRef.current.getPlacePredictions(
       {
         input: query,
@@ -347,8 +350,23 @@ export function GooglePlacesBusinessInput({
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
           setPredictions(results);
           setShowDropdown(true);
+          setSearchError(null);
+        } else if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+          setPredictions([]);
+          setShowDropdown(false);
+          setSearchError(null);
+        } else if (status === window.google.maps.places.PlacesServiceStatus.INVALID_REQUEST) {
+          setPredictions([]);
+          setSearchError('Invalid search query. Please try again.');
+        } else if (status === window.google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT) {
+          setPredictions([]);
+          setSearchError('Search limit reached. Please wait a moment and try again.');
+        } else if (status === window.google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
+          setPredictions([]);
+          setSearchError('Search service unavailable. Please enter manually.');
         } else {
           setPredictions([]);
+          setSearchError('Could not search. Please try again.');
         }
       }
     );
@@ -358,7 +376,8 @@ export function GooglePlacesBusinessInput({
     const value = e.target.value;
     setInputValue(value);
     setSelectedPlace(null);
-    
+    setSearchError(null);
+
     if (isManualMode) {
       onBusinessSelect({
         businessName: value,
@@ -368,11 +387,11 @@ export function GooglePlacesBusinessInput({
       });
       return;
     }
-    
+
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-    
+
     debounceTimerRef.current = setTimeout(() => {
       searchPlaces(value);
     }, 300);
@@ -380,14 +399,15 @@ export function GooglePlacesBusinessInput({
   
   const handleSelectPlace = (prediction: google.maps.places.AutocompletePrediction) => {
     if (!placesServiceRef.current) return;
-    
+
     setIsLoading(true);
     setShowDropdown(false);
-    
+    setSearchError(null);
+
     placesServiceRef.current.getDetails(
       {
         placeId: prediction.place_id,
-        fields: ['name', 'formatted_address', 'place_id', 'types'],
+        fields: ['name', 'formatted_address', 'place_id', 'types', 'geometry'],
       },
       (place, status) => {
         setIsLoading(false);
@@ -398,18 +418,20 @@ export function GooglePlacesBusinessInput({
             place_id: place.place_id || prediction.place_id,
             types: place.types,
           };
-          
+
           setSelectedPlace(result);
           setInputValue(result.name);
-          
+
           const service = getServiceFromTypes(result.types);
-          
+
           onBusinessSelect({
             businessName: result.name,
             formattedAddress: result.formatted_address,
             placeId: result.place_id,
             service: service || undefined,
           });
+        } else {
+          setSearchError('Could not load place details. Please try again.');
         }
       }
     );
@@ -419,6 +441,7 @@ export function GooglePlacesBusinessInput({
     setSelectedPlace(null);
     setInputValue("");
     setPredictions([]);
+    setSearchError(null);
     onBusinessSelect({
       businessName: "",
       formattedAddress: "",
@@ -533,7 +556,20 @@ export function GooglePlacesBusinessInput({
               )}
             </div>
           </div>
-          
+
+          {searchError && !isManualMode && (
+            <div className="mt-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+              <p className="text-sm text-destructive">{searchError}</p>
+              <button
+                type="button"
+                onClick={handleEnableManualMode}
+                className="text-xs text-destructive underline mt-2 hover:no-underline"
+              >
+                Try entering manually
+              </button>
+            </div>
+          )}
+
           {showDropdown && predictions.length > 0 && !isManualMode && (
             <div
               ref={dropdownRef}
@@ -606,6 +642,7 @@ export function GooglePlacesAddressInput({
   const [showDropdown, setShowDropdown] = useState(false);
   const [isManualMode, setIsManualMode] = useState(false);
   const [apiError, setApiError] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -650,11 +687,13 @@ export function GooglePlacesAddressInput({
   const searchAddresses = useCallback((query: string) => {
     if (!autocompleteServiceRef.current || query.length < 2) {
       setPredictions([]);
+      setSearchError(null);
       return;
     }
-    
+
     setIsLoading(true);
-    
+    setSearchError(null);
+
     autocompleteServiceRef.current.getPlacePredictions(
       {
         input: query,
@@ -665,8 +704,23 @@ export function GooglePlacesAddressInput({
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
           setPredictions(results);
           setShowDropdown(true);
+          setSearchError(null);
+        } else if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+          setPredictions([]);
+          setShowDropdown(false);
+          setSearchError(null);
+        } else if (status === window.google.maps.places.PlacesServiceStatus.INVALID_REQUEST) {
+          setPredictions([]);
+          setSearchError('Invalid search query. Please try again.');
+        } else if (status === window.google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT) {
+          setPredictions([]);
+          setSearchError('Search limit reached. Please wait a moment and try again.');
+        } else if (status === window.google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
+          setPredictions([]);
+          setSearchError('Search service unavailable. Please enter manually.');
         } else {
           setPredictions([]);
+          setSearchError('Could not search. Please try again.');
         }
       }
     );
@@ -675,16 +729,17 @@ export function GooglePlacesAddressInput({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
-    
+    setSearchError(null);
+
     if (isManualMode) {
       onAddressSelect(value);
       return;
     }
-    
+
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-    
+
     debounceTimerRef.current = setTimeout(() => {
       searchAddresses(value);
     }, 300);
@@ -755,7 +810,20 @@ export function GooglePlacesAddressInput({
           )}
         </div>
       </div>
-      
+
+      {searchError && !isManualMode && (
+        <div className="mt-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+          <p className="text-sm text-destructive">{searchError}</p>
+          <button
+            type="button"
+            onClick={handleEnableManualMode}
+            className="text-xs text-destructive underline mt-2 hover:no-underline"
+          >
+            Try entering manually
+          </button>
+        </div>
+      )}
+
       {showDropdown && predictions.length > 0 && !isManualMode && (
         <div
           ref={dropdownRef}
