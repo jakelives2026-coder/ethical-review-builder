@@ -190,6 +190,9 @@ export default function AuthPage() {
                           Forgot your password?
                         </a>
                       </div>
+                      <div className="pt-4 text-center text-xs text-muted-foreground border-t">
+                        <p>By signing in, you agree to our Terms of Service and Privacy Policy</p>
+                      </div>
                     </form>
                   </Form>
                 </CardContent>
@@ -273,16 +276,15 @@ export default function AuthPage() {
                       >
                         {registerMutation.isPending ? "Creating account…" : "Create Account"}
                       </Button>
+                      <div className="pt-4 text-center text-xs text-muted-foreground border-t">
+                        <p>By creating an account, you agree to our Terms of Service and Privacy Policy</p>
+                      </div>
                     </form>
                   </Form>
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
-
-          <div className="mt-6 text-center text-xs text-muted-foreground">
-            <p>By signing in, you agree to our Terms of Service and Privacy Policy</p>
-          </div>
         </div>
       </div>
 
