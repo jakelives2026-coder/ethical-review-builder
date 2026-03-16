@@ -292,7 +292,7 @@ When a new UI/UX issue is identified, log it in this format:
 ### Current Open Issues (as of 2026-03-16)
 | # | Issue | Heuristic | Severity | Status |
 |---|-------|-----------|----------|--------|
-| UI-001 | Profile picture not showing after Google OAuth login | H6 (Recognition) | Major | Open |
+| UI-001 | Profile picture not showing after Google OAuth login | H6 (Recognition) | Major | ✅ FIXED (2026-03-16) |
 | UI-002 | Button text alignment broken on some screen sizes | H4 (Consistency) | Minor | Open |
 | UI-003 | Google Places not autosuggesting correct business name | H5 (Error Prevention) | Major | Open |
 
@@ -302,5 +302,6 @@ When a new UI/UX issue is identified, log it in this format:
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2026-03-16 | UI-001 Fixed — Google OAuth profile picture now stored and displayed | Claude Code |
 | 2026-03-16 | Primitives layer created — FormInput, FormSelect, AutocompleteField | Claude Code |
 | 2026-03-16 | Initial document created | Claude (Cowork) |
