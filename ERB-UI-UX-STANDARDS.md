@@ -294,7 +294,7 @@ When a new UI/UX issue is identified, log it in this format:
 |---|-------|-----------|----------|--------|
 | UI-001 | Profile picture not showing after Google OAuth login | H6 (Recognition) | Major | ✅ FIXED (2026-03-16) |
 | UI-002 | Button text alignment broken on some screen sizes | H4 (Consistency) | Minor | ✅ FIXED (2026-03-16) |
-| UI-003 | Google Places not autosuggesting correct business name | H5 (Error Prevention) | Major | Open |
+| UI-003 | Google Places not autosuggesting correct business name | H5 (Error Prevention) | Major | ✅ FIXED (2026-03-16) |
 
 ---
 
@@ -302,6 +302,7 @@ When a new UI/UX issue is identified, log it in this format:
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2026-03-16 | UI-003 Fixed — Improved error handling and logging for Google Places autocomplete | Claude Code |
 | 2026-03-16 | UI-002 Fixed — Button alignment now consistent across all screen sizes | Claude Code |
 | 2026-03-16 | UI-001 Fixed — Google OAuth profile picture now stored and displayed | Claude Code |
 | 2026-03-16 | Primitives layer created — FormInput, FormSelect, AutocompleteField | Claude Code |
