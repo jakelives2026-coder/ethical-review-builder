@@ -68,6 +68,7 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
   const { toast } = useToast();
   const { user, isLoading } = useAuth();
   const hasRestoredSession = useRef(false);
+  const cachedTotalSteps = useRef<number | null>(null);
 
   // Animation classes
   const [animationClass, setAnimationClass] = useState("");
@@ -287,18 +288,23 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
   };
   
   // Map internal step IDs to user-facing step numbers
-  // CRITICAL FIX: Calculate total ONCE based on known relationship, not dynamically
+  // Cache total steps once relationship is known to prevent mid-flow changes
   const getDisplayStep = (internalStep: Step): { current: number; total: number } => {
-    // Calculate total steps:
-    // - Always show: BusinessType (1) + Relationship (1) + BusinessInfo (1) + Generating (1) + Complete (1) = 5
-    // - Conditional: ServiceLocation (1) only if not acquaintance = +1 for non-acquaintance
-    // - Variable: Questions count depends on relationship & businessType
-    const questionCount = formData.relationship ? getQuestionCount(formData.relationship) : 3; // Default to 3 if no relationship yet
+    // Calculate and cache total on first calculation (when relationship becomes known)
+    if (cachedTotalSteps.current === null && formData.relationship) {
+      const questionCount = getQuestionCount(formData.relationship);
+      const hasServiceLocation = formData.relationship !== "acquaintance";
+      // For acquaintance: 1(type) + 1(relationship) + 1(business) + questions + 1(generating) + 1(complete) = 5 + questions
+      // For others: 1(type) + 1(relationship) + 1(location) + 1(business) + questions + 1(generating) + 1(complete) = 6 + questions
+      cachedTotalSteps.current = hasServiceLocation ? 6 + questionCount : 5 + questionCount;
+    }
+
+    // Use cached total if available, otherwise calculate assuming no service location (8 steps)
+    const total = cachedTotalSteps.current ?? 8;
+
+    // For determining which steps are shown, we still need to know if this relationship has service location
+    const questionCount = formData.relationship ? getQuestionCount(formData.relationship) : 3;
     const hasServiceLocation = formData.relationship && formData.relationship !== "acquaintance";
-    // FIXED: Total is consistent once relationship is known
-    // For acquaintance: 1(type) + 1(relationship) + 1(business) + questions + 1(generating) + 1(complete) = 5 + questions
-    // For others: 1(type) + 1(relationship) + 1(location) + 1(business) + questions + 1(generating) + 1(complete) = 6 + questions
-    const total = hasServiceLocation ? 6 + questionCount : 5 + questionCount;
 
     // Map each step to its display number
     let current = 1;
