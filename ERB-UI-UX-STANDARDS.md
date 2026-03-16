@@ -290,11 +290,19 @@ When a new UI/UX issue is identified, log it in this format:
 ```
 
 ### Current Open Issues (as of 2026-03-16)
+
+#### UI/UX Issues (Usability Heuristics)
 | # | Issue | Heuristic | Severity | Status |
 |---|-------|-----------|----------|--------|
 | UI-001 | Profile picture not showing after Google OAuth login | H6 (Recognition) | Major | ✅ FIXED (2026-03-16) |
 | UI-002 | Button text alignment broken on some screen sizes | H4 (Consistency) | Minor | ✅ FIXED (2026-03-16) |
 | UI-003 | Google Places not autosuggesting correct business name | H5 (Error Prevention) | Major | ✅ FIXED (2026-03-16) |
+
+#### Accessibility Issues (WCAG 2.1 AA)
+| # | Issue | WCAG Criterion | Severity | Status |
+|---|-------|---|---|--------|
+| A-001 | FormInput/FormSelect labels not associated with inputs | 1.3.1 Info & Relationships | Critical | ✅ FIXED (2026-03-16) |
+| A-002 | Icon-only buttons (copy, open) missing accessible labels | 1.4.3 Contrast & 4.1.2 Name, Role, Value | Major | ✅ FIXED (2026-03-16) |
 
 ---
 
@@ -302,6 +310,7 @@ When a new UI/UX issue is identified, log it in this format:
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2026-03-16 | WCAG 2.1 AA Audit — Fixed critical label association issues (A-001, A-002) | Claude Code |
 | 2026-03-16 | UI-003 Fixed — Improved error handling and logging for Google Places autocomplete | Claude Code |
 | 2026-03-16 | UI-002 Fixed — Button alignment now consistent across all screen sizes | Claude Code |
 | 2026-03-16 | UI-001 Fixed — Google OAuth profile picture now stored and displayed | Claude Code |
