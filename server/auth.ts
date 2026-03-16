@@ -145,24 +145,31 @@ export function setupAuth(app: Express) {
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
+            // Extract picture URL from Google profile
+            const pictureUrl = profile.photos?.[0]?.value;
+            const email = profile.emails?.[0]?.value;
+
             // Look up user by googleId first
             let user = await storage.getUserByGoogleId(profile.id);
 
             if (user) {
-              // User exists, update last login
-              await storage.updateUser(user.id, { lastLoginAt: new Date() });
+              // User exists, update last login and picture if available
+              await storage.updateUser(user.id, {
+                lastLoginAt: new Date(),
+                ...(pictureUrl && { profileImageUrl: pictureUrl }),
+              });
               return done(null, user);
             }
 
             // Look up by email to link existing account
-            const email = profile.emails?.[0]?.value;
             if (email) {
               user = await storage.getUserByEmail(email);
               if (user) {
-                // Link Google ID to existing account
+                // Link Google ID to existing account and update picture
                 await storage.updateUser(user.id, {
                   googleId: profile.id,
                   lastLoginAt: new Date(),
+                  ...(pictureUrl && { profileImageUrl: pictureUrl }),
                 });
                 return done(null, user);
               }
@@ -177,6 +184,7 @@ export function setupAuth(app: Express) {
               fullName: displayName,
               googleId: profile.id,
               emailVerified: !!email, // Google users' emails are verified
+              profileImageUrl: pictureUrl, // Store profile picture from Google OAuth
             });
 
             return done(null, newUser);

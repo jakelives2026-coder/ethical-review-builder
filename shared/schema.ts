@@ -43,6 +43,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   company: true,
   googleId: true,
   emailVerified: true,
+  profileImageUrl: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
