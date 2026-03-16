@@ -350,17 +350,21 @@ export function ProfileSettingsDialog({ isOpen, onClose, profile }: ProfileSetti
                         readOnly 
                         className="flex-1 bg-muted"
                       />
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="icon"
                         onClick={() => handleCopy(shareUrl)}
+                        aria-label={copied ? "Copied to clipboard" : "Copy share link"}
+                        title={copied ? "Copied to clipboard" : "Copy share link"}
                       >
                         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="icon"
                         onClick={() => window.open(shareUrl, '_blank')}
+                        aria-label="Open share link in new window"
+                        title="Open share link in new window"
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
