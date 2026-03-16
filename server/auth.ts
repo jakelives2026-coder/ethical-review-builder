@@ -1,7 +1,7 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import rateLimit from "express-rate-limit";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
@@ -19,6 +19,19 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many requests. Please try again later." },
 });
+
+// Resend verification limiter — 2 requests per 60 seconds per IP
+const resendVerificationLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 2,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please try again in a minute." },
+  skip: (req) => !req.isAuthenticated(), // Only count authenticated requests
+});
+
+// In-memory store for last verification email sent timestamp (per user ID)
+const lastVerificationEmailSent = new Map<number, number>();
 
 declare global {
   namespace Express {
@@ -48,6 +61,34 @@ export const registerUserSchema = insertUserSchema.extend({
   fullName: z.string().optional(),
   company: z.string().optional(),
 });
+
+// Middleware to require email verification (except for OAuth users with googleId)
+export function requireEmailVerified(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
+  const user = req.user as SelectUser;
+
+  // Google OAuth users are already verified
+  if (user.googleId) {
+    return next();
+  }
+
+  // Email/password users must have verified email
+  if (!user.emailVerified) {
+    return res.status(403).json({
+      error: "email_not_verified",
+      message: "Please verify your email before continuing.",
+    });
+  }
+
+  next();
+}
 
 export function setupAuth(app: Express) {
   // Configure session
@@ -293,6 +334,88 @@ export function setupAuth(app: Express) {
       }
 
       res.json({ message: "Email verified successfully" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // POST /api/auth/resend-verification — resend verification email
+  app.post("/api/auth/resend-verification", resendVerificationLimiter, async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const user = req.user as SelectUser;
+
+      // Google OAuth users don't need verification
+      if (user.googleId) {
+        return res.status(400).json({
+          error: "Already verified",
+          message: "Your email is already verified.",
+        });
+      }
+
+      // If already verified, no need to resend
+      if (user.emailVerified) {
+        return res.status(400).json({
+          error: "Already verified",
+          message: "Your email is already verified.",
+        });
+      }
+
+      // Check rate limit: max 2 resends per 60 seconds per user
+      const now = Date.now();
+      const lastSent = lastVerificationEmailSent.get(user.id);
+      if (lastSent && now - lastSent < 60 * 1000) {
+        return res.status(429).json({
+          error: "Too many requests",
+          message: "Please wait before requesting another verification email.",
+        });
+      }
+
+      // Generate new token and send email
+      const verificationToken = randomBytes(32).toString("hex");
+      await storage.setEmailVerificationToken(user.id, verificationToken);
+
+      try {
+        const appUrl = (process.env.APP_URL || "https://ethical-review-builder.vercel.app").trim().replace(/\\n|\n|\r/g, '');
+        const verifyUrl = `${appUrl}/verify-email?token=${verificationToken}`;
+        const fromEmail = (process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev").trim().replace(/\\n|\n|\r/g, '');
+
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: `Ethical Review Builder <${fromEmail}>`,
+          to: user.email,
+          subject: "Verify your email address",
+          html: `
+            <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+              <h2 style="margin-bottom:8px">Verify your email</h2>
+              <p style="color:#555;margin-bottom:24px">
+                Click the button below to verify your email address.
+              </p>
+              <a href="${verifyUrl}"
+                 style="display:inline-block;background:#000;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600">
+                Verify Email
+              </a>
+              <p style="color:#999;font-size:13px;margin-top:24px">
+                If you didn't request this, you can safely ignore this email.
+              </p>
+            </div>
+          `,
+        });
+
+        // Track last sent time
+        lastVerificationEmailSent.set(user.id, now);
+
+        res.json({ message: "Verification email sent successfully." });
+      } catch (emailError) {
+        console.error("Failed to send verification email:", emailError);
+        return res.status(500).json({
+          error: "Email sending failed",
+          message: "Failed to send verification email. Please try again.",
+        });
+      }
     } catch (error) {
       next(error);
     }

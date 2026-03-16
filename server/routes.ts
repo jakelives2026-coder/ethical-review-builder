@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import rateLimit from "express-rate-limit";
 import { storage, ensureSessionTable } from "./storage";
 import OpenAI from "openai";
-import { setupAuth } from "./auth";
+import { setupAuth, requireEmailVerified } from "./auth";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "./db";
@@ -104,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =====================
   
   // Get all business profiles for the authenticated user
-  app.get("/api/business-profiles", requireAuth, async (req, res) => {
+  app.get("/api/business-profiles", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const profiles = await storage.getBusinessProfilesByUser(req.user!.id);
       res.json(profiles);
@@ -115,7 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get a single business profile
-  app.get("/api/business-profiles/:id", requireAuth, async (req, res) => {
+  app.get("/api/business-profiles/:id", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const profileId = parseInt(req.params.id);
       const profile = await storage.getBusinessProfile(profileId);
@@ -137,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create a new business profile
-  app.post("/api/business-profiles", requireAuth, async (req, res) => {
+  app.post("/api/business-profiles", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       // Validate request body
       const schema = z.object({
@@ -168,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update a business profile
-  app.patch("/api/business-profiles/:id", requireAuth, async (req, res) => {
+  app.patch("/api/business-profiles/:id", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const profileId = parseInt(req.params.id);
       
@@ -225,7 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Delete a business profile
-  app.delete("/api/business-profiles/:id", requireAuth, async (req, res) => {
+  app.delete("/api/business-profiles/:id", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const profileId = parseInt(req.params.id);
       
@@ -250,7 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update branding for a business profile
-  app.patch("/api/business-profiles/:id/branding", requireAuth, async (req, res) => {
+  app.patch("/api/business-profiles/:id/branding", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const profileId = parseInt(req.params.id);
       
@@ -292,7 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Generate share slug for a business profile
-  app.post("/api/business-profiles/:id/share-slug", requireAuth, async (req, res) => {
+  app.post("/api/business-profiles/:id/share-slug", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const profileId = parseInt(req.params.id);
       
@@ -314,7 +314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Generate embed token for a business profile
-  app.post("/api/business-profiles/:id/embed-token", requireAuth, async (req, res) => {
+  app.post("/api/business-profiles/:id/embed-token", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const profileId = parseInt(req.params.id);
       
@@ -409,7 +409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ======================
   
   // Get all review templates for the authenticated user
-  app.get("/api/review-templates", requireAuth, async (req, res) => {
+  app.get("/api/review-templates", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const templates = await storage.getReviewTemplatesByUser(req.user!.id);
       res.json(templates);
@@ -420,7 +420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get all public templates plus user's templates
-  app.get("/api/review-templates/all", requireAuth, async (req, res) => {
+  app.get("/api/review-templates/all", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const userTemplates = await storage.getReviewTemplatesByUser(req.user!.id);
       const publicTemplates = await storage.getPublicReviewTemplates();
@@ -455,7 +455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get templates for a specific business profile
-  app.get("/api/business-profiles/:id/templates", requireAuth, async (req, res) => {
+  app.get("/api/business-profiles/:id/templates", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const profileId = parseInt(req.params.id);
       
@@ -478,7 +478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get a single review template
-  app.get("/api/review-templates/:id", requireAuth, async (req, res) => {
+  app.get("/api/review-templates/:id", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const templateId = parseInt(req.params.id);
       const template = await storage.getReviewTemplate(templateId);
@@ -500,7 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create a new review template
-  app.post("/api/review-templates", requireAuth, async (req, res) => {
+  app.post("/api/review-templates", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       // Validate request body
       const schema = z.object({
@@ -552,7 +552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update a review template
-  app.patch("/api/review-templates/:id", requireAuth, async (req, res) => {
+  app.patch("/api/review-templates/:id", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const templateId = parseInt(req.params.id);
       
@@ -613,7 +613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Delete a review template
-  app.delete("/api/review-templates/:id", requireAuth, async (req, res) => {
+  app.delete("/api/review-templates/:id", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const templateId = parseInt(req.params.id);
       
@@ -642,7 +642,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============
   
   // Get all reviews for the authenticated user
-  app.get("/api/reviews", requireAuth, async (req, res) => {
+  app.get("/api/reviews", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const reviews = await storage.getReviewsByUser(req.user!.id);
       res.json(reviews);
@@ -653,7 +653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get a single review
-  app.get("/api/reviews/:id", requireAuth, async (req, res) => {
+  app.get("/api/reviews/:id", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const reviewId = parseInt(req.params.id);
       const review = await storage.getReview(reviewId);
@@ -1205,7 +1205,7 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
   });
   
   // Update review publication status
-  app.patch("/api/reviews/:id/publish", requireAuth, async (req, res) => {
+  app.patch("/api/reviews/:id/publish", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const reviewId = parseInt(req.params.id);
       const { isPublished } = req.body;
@@ -1235,7 +1235,7 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
   });
   
   // Delete a review
-  app.delete("/api/reviews/:id", requireAuth, async (req, res) => {
+  app.delete("/api/reviews/:id", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const reviewId = parseInt(req.params.id);
       
@@ -1260,7 +1260,7 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
   });
   
   // Update user profile (fullName, company)
-  app.patch("/api/user/profile", requireAuth, async (req, res) => {
+  app.patch("/api/user/profile", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const { fullName, company, hasOnboarded } = req.body;
 
@@ -1291,7 +1291,7 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
   });
   
   // Update user plan (this would normally be handled by a payment processor webhook)
-  app.post("/api/user/update-plan", requireAuth, async (req, res) => {
+  app.post("/api/user/update-plan", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const { planType } = req.body;
       
@@ -1411,7 +1411,7 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
   // =====================
 
   // Create a Stripe Checkout Session for Pro or Business plan
-  app.post("/api/stripe/create-checkout-session", requireAuth, async (req, res) => {
+  app.post("/api/stripe/create-checkout-session", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const { planId } = z.object({ planId: z.enum(["pro", "business"]) }).parse(req.body);
 
@@ -1453,7 +1453,7 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
   });
 
   // Create a Stripe Billing Portal Session for managing subscriptions
-  app.post("/api/stripe/create-portal-session", requireAuth, async (req, res) => {
+  app.post("/api/stripe/create-portal-session", requireAuth, requireEmailVerified, async (req, res) => {
     try {
       const user = req.user!;
       const appUrl = (process.env.APP_URL ?? "http://localhost:5000").trim().replace(/\\n|\n|\r/g, '');

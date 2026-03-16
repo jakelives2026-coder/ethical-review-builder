@@ -14,6 +14,7 @@ import AuthPage from "@/pages/auth-page";
 import ForgotPasswordPage from "@/pages/forgot-password-page";
 import ResetPasswordPage from "@/pages/reset-password-page";
 import VerifyEmailPage from "@/pages/verify-email-page";
+import EmailPendingPage from "@/pages/email-pending-page";
 import PrivacyPage from "@/pages/privacy-page";
 import TermsPage from "@/pages/terms-page";
 import PricingPage from "@/pages/pricing-page";
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/verify-email" component={VerifyEmailPage} />
+      <ProtectedRoute path="/email-pending" component={EmailPendingPage} allowUnverified={true} />
       <Route path="/privacy" component={PrivacyPage} />
       <Route path="/terms" component={TermsPage} />
       <Route path="/pricing" component={PricingPage} />
