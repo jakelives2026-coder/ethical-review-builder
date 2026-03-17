@@ -89,6 +89,7 @@ const getServicesConfig = (businessType: string | null | undefined) => {
 const formSchema = insertBusinessProfileSchema.extend({
   businessName: z.string().min(2, "Business name must be at least 2 characters"),
   businessLocation: z.string().min(2, "Location must be at least 2 characters"),
+  businessService: z.string().min(1, "Business service is required"),
   businessType: z.string().optional(),
   representativeName: z.string().optional(),
   isPrimary: z.boolean().optional(),
@@ -102,6 +103,7 @@ type BusinessProfileFormProps = {
     id: number;
     businessName: string;
     businessLocation: string;
+    businessService?: string;
     businessType?: string;
     services?: string;
     representativeName?: string;
@@ -178,6 +180,7 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
       userId: userId,
       businessName: editData?.businessName || "",
       businessLocation: editData?.businessLocation || "",
+      businessService: editData?.businessService || "",
       businessType: editData?.businessType || "other",
       services: editData?.services || "",
       representativeName: editData?.representativeName || "",
@@ -325,6 +328,9 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                           field.onChange(business.businessName);
                           if (business.formattedAddress) {
                             form.setValue("businessLocation", business.formattedAddress);
+                          }
+                          if (business.service) {
+                            form.setValue("businessService", business.service);
                           }
                         }}
                         placeholder="Search for your business..."
