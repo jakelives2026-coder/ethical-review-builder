@@ -300,6 +300,8 @@ When a new UI/UX issue is identified, log it in this format:
 | UI-004 | Profile picture showing initials after Google OAuth — UI-001 regression | H6 (Recognition) | Major | ✅ FIXED (2026-03-16) |
 | UI-005 | Pricing nav tab shows active state when on /pricing page — unclear if intentional | H4 (Consistency) | Minor | ✅ FIXED (2026-03-16) |
 | UI-006 | Free tier pricing card lower than Pro/Business cards — breaks visual balance | H8 (Aesthetic) | Minor | ✅ FIXED (2026-03-16) |
+| UI-007 | CTA buttons not pinned to card bottoms | H4 (Consistency) | Cosmetic | ✅ FIXED (2026-03-16) |
+| UI-008 | "Most Popular" badge floats above Pro card with zero overlap — disconnected from card | H8 (Aesthetic) | Cosmetic | ✅ FIXED (2026-03-16) |
 
 #### Accessibility Issues (WCAG 2.1 AA)
 | # | Issue | WCAG Criterion | Severity | Status |
@@ -313,6 +315,7 @@ When a new UI/UX issue is identified, log it in this format:
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2026-03-16 | UI-008 badge straddle, UI-005 confirmed live | Jake |
 | 2026-03-16 | UI-004/005/006 Final fixes — Profile picture fetch refactored, pricing nav forced inactive, cards aligned with absolute badge positioning | Claude Code |
 | 2026-03-16 | UI-004/005/006 Initial fixes — Profile picture fetch after OAuth, pricing nav active state, card alignment | Claude Code |
 | 2026-03-16 | WCAG 2.1 AA Audit — Fixed critical label association issues (A-001, A-002) | Claude Code |
