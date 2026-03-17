@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth.tsx";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,7 +76,10 @@ export function Navbar() {
               </Button>
             </Link>
             <Link href="/pricing">
-              <span className="text-sm font-medium transition-colors hover:text-primary cursor-pointer text-muted-foreground">
+              <span className={cn(
+                "text-sm font-medium transition-colors hover:text-primary cursor-pointer",
+                location === "/pricing" ? "text-primary font-semibold" : "text-muted-foreground"
+              )}>
                 Pricing
               </span>
             </Link>
