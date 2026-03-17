@@ -176,7 +176,7 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
   // Initialize form with default values
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    values: {
       userId: userId,
       businessName: editData?.businessName || "",
       businessLocation: editData?.businessLocation || "",
