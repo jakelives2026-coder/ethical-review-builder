@@ -347,7 +347,34 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                 )}
               />
             </div>
-            
+
+            {/* Business Service Field */}
+            <div className="bg-card rounded-lg p-3 border border-border/50 shadow-sm transition-all duration-200">
+              <FormField
+                control={form.control}
+                name="businessService"
+                render={({ field }) => (
+                  <FormItem className="relative">
+                    <FormLabel className={`${getMobileTextStyles("label")} text-primary font-medium`}>
+                      Business Service <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g. Window replacement and installation"
+                        {...field}
+                        value={field.value || ""}
+                        onFocus={handleInputFocus}
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Describe your primary service. This appears on your profile card.
+                    </p>
+                    <FormMessage className="text-xs mt-1 font-medium" />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             {/* Location Field */}
             <div className="bg-card rounded-lg p-3 border border-border/50 shadow-sm transition-all duration-200">
               <FormField
