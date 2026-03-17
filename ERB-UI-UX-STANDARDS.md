@@ -313,7 +313,8 @@ When a new UI/UX issue is identified, log it in this format:
 
 | Date | Change | Author |
 |------|--------|--------|
-| 2026-03-16 | UI-004/005/006 Fixed — Profile picture fetch after OAuth, pricing nav active state, card alignment | Claude Code |
+| 2026-03-16 | UI-004/005/006 Final fixes — Profile picture fetch refactored, pricing nav forced inactive, cards aligned with absolute badge positioning | Claude Code |
+| 2026-03-16 | UI-004/005/006 Initial fixes — Profile picture fetch after OAuth, pricing nav active state, card alignment | Claude Code |
 | 2026-03-16 | WCAG 2.1 AA Audit — Fixed critical label association issues (A-001, A-002) | Claude Code |
 | 2026-03-16 | UI-003 Fixed — Improved error handling and logging for Google Places autocomplete | Claude Code |
 | 2026-03-16 | UI-002 Fixed — Button alignment now consistent across all screen sizes | Claude Code |
