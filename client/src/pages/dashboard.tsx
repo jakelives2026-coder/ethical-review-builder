@@ -48,6 +48,17 @@ import { BusinessProfileForm } from "@/components/BusinessProfiles/BusinessProfi
 import { ProfileSettingsDialog } from "@/components/BusinessProfiles/ProfileSettingsDialog";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 
+function shortAddress(full: string): string {
+  const parts = full.split(',');
+  if (parts.length >= 3) {
+    const city = parts[parts.length - 3]?.trim();
+    const stateZip = parts[parts.length - 2]?.trim();
+    const state = stateZip?.split(' ').find(s => /^[A-Z]{2}$/.test(s));
+    return city && state ? `${city}, ${state}` : full;
+  }
+  return full;
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("business-profiles");
@@ -216,7 +227,7 @@ export default function Dashboard() {
                         </div>
                       </CardTitle>
                       <CardDescription className={getMobileTextStyles('label')}>
-                        {profile.businessLocation}
+                        {shortAddress(profile.businessLocation)}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className={isMobile ? 'px-4 py-2' : ''}>
