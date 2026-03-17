@@ -254,7 +254,7 @@ export default function PricingPage() {
           <div key={plan.name} className="relative pt-6">
             {/* Badge space reserved for all cards (badge only shows for Pro) */}
             {plan.highlighted && plan.badge && (
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10">
+              <div className="absolute top-[13px] left-1/2 -translate-x-1/2 z-10">
                 <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap shadow-sm">
                   {plan.badge}
                 </span>
