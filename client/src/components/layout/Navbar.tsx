@@ -78,7 +78,9 @@ export function Navbar() {
             <Link href="/pricing">
               <span className={cn(
                 "text-sm font-medium transition-colors hover:text-primary cursor-pointer",
-                location === "/pricing" ? "text-primary font-semibold" : "text-muted-foreground"
+                location === "/pricing"
+                  ? "text-foreground font-semibold underline underline-offset-4 decoration-2 decoration-primary"
+                  : "text-muted-foreground"
               )}>
                 Pricing
               </span>
