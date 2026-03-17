@@ -75,6 +75,18 @@ export function Navbar() {
                 Create Review
               </Button>
             </Link>
+            {user && (
+              <Link href="/dashboard">
+                <span className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary cursor-pointer",
+                  location === "/dashboard"
+                    ? "text-foreground font-semibold underline underline-offset-4 decoration-2 decoration-primary"
+                    : "text-muted-foreground"
+                )}>
+                  Dashboard
+                </span>
+              </Link>
+            )}
             <Link href="/pricing">
               <span className={cn(
                 "text-sm font-medium transition-colors hover:text-primary cursor-pointer",
