@@ -10,8 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FormInput } from "@/components/primitives";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
@@ -70,24 +69,20 @@ export function EditProfileDialog({
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Enter your full name"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="company">Company</Label>
-              <Input
-                id="company"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                placeholder="Enter your company name"
-              />
-            </div>
+            <FormInput
+              label="Full Name"
+              id="fullName"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Enter your full name"
+            />
+            <FormInput
+              label="Company"
+              id="company"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              placeholder="Enter your company name"
+            />
           </div>
           <DialogFooter>
             <Button

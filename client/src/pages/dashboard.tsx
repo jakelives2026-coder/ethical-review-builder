@@ -14,6 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { cn, getRelationshipTypeLabel } from "@/lib/utils";
 import { Link } from "wouter";
 import { 
   Building2, 
@@ -171,19 +173,16 @@ export default function Dashboard() {
 
         <div className={isMobile ? 'mt-0' : 'mt-6'}>
           <TabsContent value="business-profiles">
-            <div className={`flex ${isMobile ? 'justify-end' : 'flex-col sm:flex-row sm:justify-between sm:items-center'} mb-4 gap-3`}>
-              {!isMobile && (
-                <h2 className="text-xl font-semibold">
-                  Your Business Profiles
-                </h2>
-              )}
-              <Button 
-                className={`flex items-center gap-2 ${isMobile ? 'w-auto' : ''}`} 
-                size={isMobile ? "sm" : "default"}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-3">
+              <h2 className="text-xl font-semibold">Your Business Profiles</h2>
+              <Button
+                variant="default"
+                size="sm"
+                className="w-full md:w-auto"
                 onClick={handleCreateProfile}
               >
-                <PlusCircle className="h-4 w-4" />
-                {isMobile ? "Add" : "New Profile"}
+                <PlusCircle className="mr-2 h-4 w-4" />
+                New Profile
               </Button>
             </div>
 
@@ -228,49 +227,46 @@ export default function Dashboard() {
                         )}
                       </div>
                     </CardContent>
-                    <CardFooter className={`flex ${isMobile ? 'flex-col gap-2 px-4 py-4' : 'justify-between gap-2'}`}>
-                      <div className={`flex gap-2 ${isMobile ? 'w-full' : ''}`}>
-                        <Button 
-                          variant="outline" 
-                          size={isMobile ? "default" : "sm"}
-                          className={isMobile ? 'flex-1' : ''}
-                          onClick={() => handleEditProfile(profile)}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size={isMobile ? "default" : "sm"}
-                          className={isMobile ? 'flex-1' : ''}
-                          onClick={() => setSettingsProfile(profile)}
-                        >
-                          <Palette className="h-4 w-4 mr-2" />
-                          Branding
-                        </Button>
-                      </div>
-                      <div className={`flex gap-2 ${isMobile ? 'w-full' : ''}`}>
-                        {profile.shareSlug && (
-                          <Button 
-                            variant="secondary" 
-                            size={isMobile ? "default" : "sm"}
-                            className={isMobile ? 'flex-1' : ''}
-                            onClick={() => window.open(`/review/${profile.shareSlug}`, '_blank')}
-                          >
-                            <Link2 className="h-4 w-4 mr-2" />
-                            Share
-                          </Button>
-                        )}
+                    <CardFooter className="flex flex-wrap gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 min-w-[72px]"
+                        onClick={() => handleEditProfile(profile)}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 min-w-[72px]"
+                        onClick={() => setSettingsProfile(profile)}
+                      >
+                        <Palette className="h-4 w-4 mr-2" />
+                        Branding
+                      </Button>
+                      {/* Share button appears only if profile has a shareSlug (generated share link) */}
+                      {profile.shareSlug && (
                         <Button
-                          variant="default"
-                          size={isMobile ? "default" : "sm"}
-                          className={isMobile ? 'flex-1' : ''}
-                          onClick={() => window.location.href = `/?profileId=${profile.id}`}
+                          variant="secondary"
+                          size="sm"
+                          className="flex-1 min-w-[72px]"
+                          onClick={() => window.open(`/review/${profile.shareSlug}`, '_blank')}
                         >
-                          <Star className="h-4 w-4 mr-2" />
-                          Review
+                          <Link2 className="h-4 w-4 mr-2" />
+                          Share
                         </Button>
-                      </div>
+                      )}
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="flex-1 min-w-[72px]"
+                        onClick={() => window.location.href = `/?profileId=${profile.id}`}
+                      >
+                        <Star className="h-4 w-4 mr-2" />
+                        Review
+                      </Button>
                     </CardFooter>
                   </Card>
                 ))}
@@ -322,7 +318,7 @@ export default function Dashboard() {
                         )}
                       </CardTitle>
                       <CardDescription className={getMobileTextStyles('label')}>
-                        {review.businessLocation} - {review.relationshipType}
+                        {review.businessLocation} • Reviewer: {getRelationshipTypeLabel(review.relationshipType)}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className={isMobile ? 'px-4 py-2' : ''}>
@@ -442,6 +438,47 @@ export default function Dashboard() {
                 currentCompany={user?.company}
               />
 
+              {/* Review Usage Card for Free Users */}
+              {user?.planType === "free" && (
+                <Card className={isMobile ? 'border-2 transition-colors hover:border-primary/30 active:bg-muted' : ''}>
+                  <CardHeader className={isMobile ? 'px-4 py-4' : ''}>
+                    <CardTitle className="flex items-center gap-2">
+                      <Star className="h-5 w-5 text-amber-500" />
+                      <span className={getMobileTextStyles('body', 'font-medium')}>Monthly Review Limit</span>
+                    </CardTitle>
+                    <CardDescription className={getMobileTextStyles('label')}>
+                      You have {user.reviewsGeneratedThisMonth ?? 0} of 3 reviews used this month
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className={isMobile ? 'px-4 py-2' : ''}>
+                    <div className={`${isMobile ? 'space-y-3' : 'space-y-3'}`}>
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          getMobileTextStyles('body'),
+                          'font-medium',
+                          (user.reviewsGeneratedThisMonth ?? 0) >= 3 && 'text-destructive'
+                        )}>
+                          {user.reviewsGeneratedThisMonth ?? 0} / 3
+                        </span>
+                        <Progress
+                          value={Math.min(100, ((user.reviewsGeneratedThisMonth ?? 0) / 3) * 100)}
+                          className="flex-1"
+                        />
+                      </div>
+                      {(user.reviewsGeneratedThisMonth ?? 0) >= 3 && (
+                        <p className={cn(getMobileTextStyles('label', 'text-destructive text-xs'))}>
+                          Limit reached.{" "}
+                          <Link href="/pricing" className="underline underline-offset-2 hover:text-destructive">
+                            Upgrade to Pro
+                          </Link>{" "}
+                          for unlimited reviews.
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <Card className={isMobile ? 'border-2 transition-colors hover:border-primary/30 active:bg-muted' : ''}>
                 <CardHeader className={isMobile ? 'px-4 py-4' : ''}>
                   <CardTitle className="flex items-center gap-2">
@@ -504,33 +541,40 @@ export default function Dashboard() {
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
           <div className="flex items-center justify-around py-2">
-            <button 
+            <button
               onClick={() => setActiveTab("business-profiles")}
-              className={`flex flex-col items-center justify-center p-2 w-1/4 ${activeTab === "business-profiles" ? "text-primary" : "text-muted-foreground"}`}
+              className={`flex flex-col items-center justify-center p-2 w-1/5 ${activeTab === "business-profiles" ? "text-primary" : "text-muted-foreground"}`}
             >
-              <Building2 className="h-5 w-5" />
+              <Building2 className="h-4 w-4" />
               <span className="text-xs mt-1">Profiles</span>
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab("reviews")}
-              className={`flex flex-col items-center justify-center p-2 w-1/4 ${activeTab === "reviews" ? "text-primary" : "text-muted-foreground"}`}
+              className={`flex flex-col items-center justify-center p-2 w-1/5 ${activeTab === "reviews" ? "text-primary" : "text-muted-foreground"}`}
             >
-              <Star className="h-5 w-5" />
+              <Star className="h-4 w-4" />
               <span className="text-xs mt-1">Reviews</span>
             </button>
-            <Link href="/" className="w-1/4">
+            <button
+              onClick={() => setActiveTab("history")}
+              className={`flex flex-col items-center justify-center p-2 w-1/5 ${activeTab === "history" ? "text-primary" : "text-muted-foreground"}`}
+            >
+              <History className="h-4 w-4" />
+              <span className="text-xs mt-1">History</span>
+            </button>
+            <Link href="/" className="w-1/5">
               <div className="flex flex-col items-center justify-center">
                 <div className="bg-primary text-primary-foreground rounded-full p-3 -mt-5 shadow-md">
-                  <PlusCircle className="h-6 w-6" />
+                  <PlusCircle className="h-5 w-5" />
                 </div>
                 <span className="text-xs mt-1">New</span>
               </div>
             </Link>
-            <button 
+            <button
               onClick={() => setActiveTab("settings")}
-              className={`flex flex-col items-center justify-center p-2 w-1/4 ${activeTab === "settings" ? "text-primary" : "text-muted-foreground"}`}
+              className={`flex flex-col items-center justify-center p-2 w-1/5 ${activeTab === "settings" ? "text-primary" : "text-muted-foreground"}`}
             >
-              <Settings className="h-5 w-5" />
+              <Settings className="h-4 w-4" />
               <span className="text-xs mt-1">Settings</span>
             </button>
           </div>

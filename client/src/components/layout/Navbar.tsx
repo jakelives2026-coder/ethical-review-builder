@@ -51,7 +51,9 @@ export function Navbar() {
   };
 
   const isActive = (path: string) => {
-    return location === path;
+    // Only show active state for app routes, not marketing pages
+    const appRoutes = ["/dashboard", "/profile", "/"];
+    return appRoutes.includes(path) && location === path;
   };
 
   return (
@@ -94,7 +96,7 @@ export function Navbar() {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{getDisplayName()}</p>

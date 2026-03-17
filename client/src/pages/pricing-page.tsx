@@ -143,27 +143,15 @@ function PlanCard({ plan }: { plan: Plan }) {
     checkout.mutate(plan.planId);
   }
 
-  return (
+  const card = (
     <div
       className={cn(
-        "relative flex flex-col rounded-xl border p-6 transition-shadow",
+        "relative flex flex-col h-full rounded-xl border p-6 transition-shadow",
         plan.highlighted
-          ? "border-foreground shadow-lg bg-foreground text-background"
+          ? "border-2 border-primary shadow-lg bg-foreground text-background"
           : "border-border bg-card"
       )}
     >
-      {plan.badge && (
-        <Badge
-          className={cn(
-            "absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 text-xs font-semibold",
-            plan.highlighted
-              ? "bg-background text-foreground"
-              : "bg-foreground text-background"
-          )}
-        >
-          {plan.badge}
-        </Badge>
-      )}
 
       <div className="mb-6">
         <h3 className={cn("text-lg font-bold mb-1", plan.highlighted ? "text-background" : "")}>
@@ -244,6 +232,22 @@ function PlanCard({ plan }: { plan: Plan }) {
       </div>
     </div>
   );
+
+  // Wrap highlighted card with badge floating above
+  if (plan.highlighted && plan.badge) {
+    return (
+      <div className="relative pt-5">
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+          <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap shadow-sm">
+            {plan.badge}
+          </span>
+        </div>
+        {card}
+      </div>
+    );
+  }
+
+  return card;
 }
 
 export default function PricingPage() {
@@ -259,7 +263,7 @@ export default function PricingPage() {
       </div>
 
       {/* Plans grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
         {plans.map((plan) => (
           <PlanCard key={plan.name} plan={plan} />
         ))}

@@ -158,7 +158,9 @@ export function setupAuth(app: Express) {
                 lastLoginAt: new Date(),
                 ...(pictureUrl && { profileImageUrl: pictureUrl }),
               });
-              return done(null, user);
+              // Fetch updated user to get latest profile picture
+              const updatedUser = await storage.getUser(user.id);
+              return done(null, updatedUser);
             }
 
             // Look up by email to link existing account
@@ -171,7 +173,9 @@ export function setupAuth(app: Express) {
                   lastLoginAt: new Date(),
                   ...(pictureUrl && { profileImageUrl: pictureUrl }),
                 });
-                return done(null, user);
+                // Fetch updated user to get latest profile picture
+                const updatedUser = await storage.getUser(user.id);
+                return done(null, updatedUser);
               }
             }
 

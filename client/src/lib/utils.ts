@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { RelationshipType } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -21,11 +22,11 @@ export function formatReviewPrompt(
   const nameLine = userName ? `Sign the review with this name: ${userName}` : "";
   
   return `
-You are writing a short, friendly Google review at a STRICT 4th-grade reading level.
+You are writing a short, friendly review at a STRICT 4th-grade reading level.
 The review should sound very natural, honest, and like real everyday language a typical person would use.
 Use simple words and short sentences. Avoid formal or academic words like "ease", "utilized", "endeavor", "meticulous", etc.
 For example, instead of "I felt at ease", say "I felt comfortable"; instead of "with ease", say "easily" or "without any problems".
-Do NOT exaggerate. Follow Google's policy for ethical reviews.
+Do NOT exaggerate. Follow platform policies for ethical reviews.
 
 CRITICAL INSTRUCTIONS:
 1. ONLY use information explicitly provided in the user's responses - don't make up additional details or assumptions
@@ -49,4 +50,18 @@ If the user is not a customer, do not say they used the service—only describe 
 Include a natural mention of photos (like "The photos show their good work" or "Check out their photos") to encourage photo viewing.
 If a name is provided, naturally sign the review using it (but don't force it).
 `;
+}
+
+// Convert relationship type values to human-readable labels for display
+export function getRelationshipTypeLabel(relationshipType: RelationshipType | string): string {
+  const labels: Record<string, string> = {
+    customer: "Customer",
+    acquaintance: "Acquaintance",
+    appointment: "Appointment",
+    "appointment-before": "Appointment (Before)",
+    "appointment-after-no-purchase": "Appointment (No Purchase)",
+    "appointment-after-purchase": "Appointment (Purchased)",
+    "appointment-after-purchase-not-started": "Appointment (Purchased, Not Started)",
+  };
+  return labels[relationshipType] || relationshipType;
 }
