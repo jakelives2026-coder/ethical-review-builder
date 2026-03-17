@@ -8,7 +8,6 @@ import { Search, MapPin, Building2, Loader2, X, Pencil } from "lucide-react";
 declare global {
   interface Window {
     google: typeof google;
-    initGooglePlaces?: () => void;
   }
 }
 
@@ -17,6 +16,15 @@ type PlaceResult = {
   formatted_address: string;
   place_id: string;
   types?: string[];
+};
+
+type AutocompletePrediction = {
+  place_id: string;
+  description: string;
+  structured_formatting: {
+    main_text: string;
+    secondary_text: string;
+  };
 };
 
 const placeTypeToService: Record<string, string> = {
@@ -190,7 +198,7 @@ const placeTypeToService: Record<string, string> = {
 
 function getServiceFromTypes(types: string[] | undefined): string {
   if (!types || types.length === 0) return "";
-  
+
   for (const type of types) {
     if (placeTypeToService[type]) {
       return placeTypeToService[type];
@@ -220,15 +228,15 @@ const loadCallbacks: (() => void)[] = [];
 
 async function loadGoogleMapsScript(): Promise<void> {
   if (googleMapsLoaded) return Promise.resolve();
-  
+
   if (googleMapsLoading) {
     return new Promise((resolve) => {
       loadCallbacks.push(resolve);
     });
   }
-  
+
   googleMapsLoading = true;
-  
+
   return new Promise(async (resolve, reject) => {
     try {
       const response = await fetch('/api/config/google-maps-key');
@@ -236,25 +244,25 @@ async function loadGoogleMapsScript(): Promise<void> {
         throw new Error('Failed to get Google Maps API key');
       }
       const { apiKey } = await response.json();
-      
+
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGooglePlaces`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async`;
       script.async = true;
       script.defer = true;
-      
-      window.initGooglePlaces = () => {
+
+      script.onload = () => {
         googleMapsLoaded = true;
         googleMapsLoading = false;
         resolve();
         loadCallbacks.forEach(cb => cb());
         loadCallbacks.length = 0;
       };
-      
+
       script.onerror = () => {
         googleMapsLoading = false;
         reject(new Error('Failed to load Google Maps script'));
       };
-      
+
       document.head.appendChild(script);
     } catch (error) {
       googleMapsLoading = false;
@@ -273,7 +281,7 @@ export function GooglePlacesBusinessInput({
   autoFocus = false,
 }: GooglePlacesBusinessInputProps) {
   const [inputValue, setInputValue] = useState(defaultValue);
-  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+  const [predictions, setPredictions] = useState<AutocompletePrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isApiLoading, setIsApiLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -282,19 +290,14 @@ export function GooglePlacesBusinessInput({
   const [apiError, setApiError] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [shouldAutoFocus, setShouldAutoFocus] = useState(autoFocus);
-  
+
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
-  const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   useEffect(() => {
     loadGoogleMapsScript()
       .then(() => {
-        autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
-        const dummyDiv = document.createElement('div');
-        placesServiceRef.current = new window.google.maps.places.PlacesService(dummyDiv);
         setIsApiLoading(false);
       })
       .catch(() => {
@@ -303,7 +306,7 @@ export function GooglePlacesBusinessInput({
         setIsManualMode(true);
       });
   }, []);
-  
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -315,11 +318,11 @@ export function GooglePlacesBusinessInput({
         setShowDropdown(false);
       }
     }
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  
+
   useEffect(() => {
     if (shouldAutoFocus && !isApiLoading && inputRef.current) {
       setTimeout(() => {
@@ -329,9 +332,9 @@ export function GooglePlacesBusinessInput({
       }, 150);
     }
   }, [shouldAutoFocus, isApiLoading]);
-  
-  const searchPlaces = useCallback((query: string) => {
-    if (!autocompleteServiceRef.current || query.length < 2) {
+
+  const searchPlaces = useCallback(async (query: string) => {
+    if (!window.google || query.length < 2) {
       setPredictions([]);
       setSearchError(null);
       return;
@@ -340,38 +343,38 @@ export function GooglePlacesBusinessInput({
     setIsLoading(true);
     setSearchError(null);
 
-    autocompleteServiceRef.current.getPlacePredictions(
-      {
+    try {
+      const { AutocompleteSuggestion } = await window.google.maps.importLibrary("places") as any;
+      const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
         input: query,
-        types: ['establishment'],
-      },
-      (results, status) => {
-        setIsLoading(false);
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-          setPredictions(results);
-          setShowDropdown(true);
-          setSearchError(null);
-        } else if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-          setPredictions([]);
-          setShowDropdown(false);
-          setSearchError(null);
-        } else if (status === window.google.maps.places.PlacesServiceStatus.INVALID_REQUEST) {
-          setPredictions([]);
-          setSearchError('Invalid search query. Please try again.');
-        } else if (status === window.google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT) {
-          setPredictions([]);
-          setSearchError('Search limit reached. Please wait a moment and try again.');
-        } else if (status === window.google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
-          setPredictions([]);
-          setSearchError('Search service unavailable. Please enter manually.');
-        } else {
-          setPredictions([]);
-          setSearchError('Could not search. Please try again.');
+        includedPrimaryTypes: ['establishment'],
+        language: 'en',
+      });
+
+      const predictions: AutocompletePrediction[] = (suggestions || []).map((s: any) => ({
+        place_id: s.placePrediction?.placeId || '',
+        description: s.placePrediction?.text?.toString() || '',
+        structured_formatting: {
+          main_text: s.placePrediction?.mainText?.toString() ?? '',
+          secondary_text: s.placePrediction?.secondaryText?.toString() ?? '',
         }
+      }));
+
+      setIsLoading(false);
+      if (predictions.length > 0) {
+        setPredictions(predictions);
+        setShowDropdown(true);
+      } else {
+        setPredictions([]);
+        setShowDropdown(false);
       }
-    );
+    } catch (error) {
+      setIsLoading(false);
+      setPredictions([]);
+      setSearchError('Could not search. Please try again.');
+    }
   }, []);
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
@@ -396,47 +399,50 @@ export function GooglePlacesBusinessInput({
       searchPlaces(value);
     }, 300);
   };
-  
-  const handleSelectPlace = (prediction: google.maps.places.AutocompletePrediction) => {
-    if (!placesServiceRef.current) return;
+
+  const handleSelectPlace = async (prediction: AutocompletePrediction) => {
+    if (!window.google) return;
 
     setIsLoading(true);
     setShowDropdown(false);
     setSearchError(null);
 
-    placesServiceRef.current.getDetails(
-      {
-        placeId: prediction.place_id,
-        fields: ['name', 'formatted_address', 'place_id', 'types', 'geometry'],
-      },
-      (place, status) => {
-        setIsLoading(false);
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
-          const result: PlaceResult = {
-            name: place.name || prediction.structured_formatting.main_text,
-            formatted_address: place.formatted_address || prediction.description,
-            place_id: place.place_id || prediction.place_id,
-            types: place.types,
-          };
+    try {
+      const { Place } = await window.google.maps.importLibrary("places") as any;
+      const place = new Place({
+        id: prediction.place_id,
+        requestedLanguage: 'en',
+      });
 
-          setSelectedPlace(result);
-          setInputValue(result.name);
+      await place.fetchFields({
+        fields: ['displayName', 'formattedAddress', 'types', 'location'],
+      });
 
-          const service = getServiceFromTypes(result.types);
+      const result: PlaceResult = {
+        name: place.displayName || prediction.structured_formatting.main_text,
+        formatted_address: place.formattedAddress || prediction.description,
+        place_id: prediction.place_id,
+        types: place.types,
+      };
 
-          onBusinessSelect({
-            businessName: result.name,
-            formattedAddress: result.formatted_address,
-            placeId: result.place_id,
-            service: service || undefined,
-          });
-        } else {
-          setSearchError('Could not load place details. Please try again.');
-        }
-      }
-    );
+      setIsLoading(false);
+      setSelectedPlace(result);
+      setInputValue(result.name);
+
+      const service = getServiceFromTypes(result.types);
+
+      onBusinessSelect({
+        businessName: result.name,
+        formattedAddress: result.formatted_address,
+        placeId: result.place_id,
+        service: service || undefined,
+      });
+    } catch (error) {
+      setIsLoading(false);
+      setSearchError('Could not load place details. Please try again.');
+    }
   };
-  
+
   const handleClearSelection = () => {
     setSelectedPlace(null);
     setInputValue("");
@@ -450,7 +456,7 @@ export function GooglePlacesBusinessInput({
     });
     inputRef.current?.focus();
   };
-  
+
   const handleEnableManualMode = () => {
     setIsManualMode(true);
     setShowDropdown(false);
@@ -462,14 +468,14 @@ export function GooglePlacesBusinessInput({
       service: undefined,
     });
   };
-  
+
   const handleDisableManualMode = () => {
     setIsManualMode(false);
     if (inputValue.length >= 2) {
       searchPlaces(inputValue);
     }
   };
-  
+
   if (isApiLoading) {
     return (
       <div className={cn("relative", className)}>
@@ -480,7 +486,7 @@ export function GooglePlacesBusinessInput({
       </div>
     );
   }
-  
+
   return (
     <div className={cn("relative", className)}>
       {selectedPlace && !isManualMode ? (
@@ -605,7 +611,7 @@ export function GooglePlacesBusinessInput({
               </button>
             </div>
           )}
-          
+
           {isManualMode && (
             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
               <Pencil className="h-3 w-3" />
@@ -636,23 +642,21 @@ export function GooglePlacesAddressInput({
   onFocus,
 }: GooglePlacesAddressInputProps) {
   const [inputValue, setInputValue] = useState(defaultValue);
-  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+  const [predictions, setPredictions] = useState<AutocompletePrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isApiLoading, setIsApiLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isManualMode, setIsManualMode] = useState(false);
   const [apiError, setApiError] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  
+
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   useEffect(() => {
     loadGoogleMapsScript()
       .then(() => {
-        autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
         setIsApiLoading(false);
       })
       .catch(() => {
@@ -661,13 +665,13 @@ export function GooglePlacesAddressInput({
         setIsManualMode(true);
       });
   }, []);
-  
+
   useEffect(() => {
     if (defaultValue !== inputValue) {
       setInputValue(defaultValue);
     }
   }, [defaultValue]);
-  
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -679,13 +683,13 @@ export function GooglePlacesAddressInput({
         setShowDropdown(false);
       }
     }
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  
-  const searchAddresses = useCallback((query: string) => {
-    if (!autocompleteServiceRef.current || query.length < 2) {
+
+  const searchAddresses = useCallback(async (query: string) => {
+    if (!window.google || query.length < 2) {
       setPredictions([]);
       setSearchError(null);
       return;
@@ -694,38 +698,38 @@ export function GooglePlacesAddressInput({
     setIsLoading(true);
     setSearchError(null);
 
-    autocompleteServiceRef.current.getPlacePredictions(
-      {
+    try {
+      const { AutocompleteSuggestion } = await window.google.maps.importLibrary("places") as any;
+      const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
         input: query,
-        types: ['geocode'],
-      },
-      (results, status) => {
-        setIsLoading(false);
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-          setPredictions(results);
-          setShowDropdown(true);
-          setSearchError(null);
-        } else if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-          setPredictions([]);
-          setShowDropdown(false);
-          setSearchError(null);
-        } else if (status === window.google.maps.places.PlacesServiceStatus.INVALID_REQUEST) {
-          setPredictions([]);
-          setSearchError('Invalid search query. Please try again.');
-        } else if (status === window.google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT) {
-          setPredictions([]);
-          setSearchError('Search limit reached. Please wait a moment and try again.');
-        } else if (status === window.google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
-          setPredictions([]);
-          setSearchError('Search service unavailable. Please enter manually.');
-        } else {
-          setPredictions([]);
-          setSearchError('Could not search. Please try again.');
+        includedPrimaryTypes: ['geocode'],
+        language: 'en',
+      });
+
+      const predictions: AutocompletePrediction[] = (suggestions || []).map((s: any) => ({
+        place_id: s.placePrediction?.placeId || '',
+        description: s.placePrediction?.text?.toString() || '',
+        structured_formatting: {
+          main_text: s.placePrediction?.mainText?.toString() ?? '',
+          secondary_text: s.placePrediction?.secondaryText?.toString() ?? '',
         }
+      }));
+
+      setIsLoading(false);
+      if (predictions.length > 0) {
+        setPredictions(predictions);
+        setShowDropdown(true);
+      } else {
+        setPredictions([]);
+        setShowDropdown(false);
       }
-    );
+    } catch (error) {
+      setIsLoading(false);
+      setPredictions([]);
+      setSearchError('Could not search. Please try again.');
+    }
   }, []);
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
@@ -744,27 +748,27 @@ export function GooglePlacesAddressInput({
       searchAddresses(value);
     }, 300);
   };
-  
-  const handleSelectAddress = (prediction: google.maps.places.AutocompletePrediction) => {
+
+  const handleSelectAddress = (prediction: AutocompletePrediction) => {
     setInputValue(prediction.description);
     setShowDropdown(false);
     onAddressSelect(prediction.description);
   };
-  
+
   const handleEnableManualMode = () => {
     setIsManualMode(true);
     setShowDropdown(false);
     setPredictions([]);
     onAddressSelect(inputValue);
   };
-  
+
   const handleDisableManualMode = () => {
     setIsManualMode(false);
     if (inputValue.length >= 2) {
       searchAddresses(inputValue);
     }
   };
-  
+
   if (isApiLoading) {
     return (
       <div className={cn("relative", className)}>
@@ -775,7 +779,7 @@ export function GooglePlacesAddressInput({
       </div>
     );
   }
-  
+
   return (
     <div className={cn("relative", className)}>
       <div className="relative">
@@ -852,7 +856,7 @@ export function GooglePlacesAddressInput({
           </button>
         </div>
       )}
-      
+
       {isManualMode && (
         <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
           <Pencil className="h-3 w-3" />
