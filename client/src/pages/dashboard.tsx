@@ -202,14 +202,18 @@ export default function Dashboard() {
                 {businessProfiles?.map((profile) => (
                   <Card key={profile.id} className={isMobile ? 'border-2 transition-colors hover:border-primary/30 active:bg-muted' : ''}>
                     <CardHeader className={isMobile ? 'px-4 py-4' : ''}>
-                      <CardTitle className="flex items-center gap-2 flex-wrap">
-                        <Building2 className="h-5 w-5 text-primary" />
-                        <span className={getMobileTextStyles('body', 'font-medium')}>{profile.businessName}</span>
-                        {profile.isPrimary && (
-                          <span className="bg-primary/10 text-primary text-xs py-0.5 px-2 rounded-full ml-auto">
-                            Primary
-                          </span>
-                        )}
+                      <CardTitle>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-5 w-5 text-primary" />
+                            <span className={getMobileTextStyles('body', 'font-medium')}>{profile.businessName}</span>
+                          </div>
+                          {profile.isPrimary && (
+                            <span className="bg-primary/10 text-primary text-xs py-0.5 px-2 rounded-full">
+                              Primary
+                            </span>
+                          )}
+                        </div>
                       </CardTitle>
                       <CardDescription className={getMobileTextStyles('label')}>
                         {profile.businessLocation}
