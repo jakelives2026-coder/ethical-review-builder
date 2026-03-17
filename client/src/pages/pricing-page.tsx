@@ -146,7 +146,7 @@ function PlanCard({ plan }: { plan: Plan }) {
   const card = (
     <div
       className={cn(
-        "relative flex flex-col h-full rounded-xl border p-6 transition-shadow",
+        "flex flex-col h-full rounded-xl border p-6 transition-shadow",
         plan.highlighted
           ? "border-2 border-primary shadow-lg bg-foreground text-background"
           : "border-border bg-card"
@@ -233,20 +233,6 @@ function PlanCard({ plan }: { plan: Plan }) {
     </div>
   );
 
-  // Wrap highlighted card with badge floating above
-  if (plan.highlighted && plan.badge) {
-    return (
-      <div className="relative pt-5">
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-          <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap shadow-sm">
-            {plan.badge}
-          </span>
-        </div>
-        {card}
-      </div>
-    );
-  }
-
   return card;
 }
 
@@ -263,9 +249,19 @@ export default function PricingPage() {
       </div>
 
       {/* Plans grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map((plan) => (
-          <PlanCard key={plan.name} plan={plan} />
+          <div key={plan.name} className="relative pt-6">
+            {/* Badge space reserved for all cards (badge only shows for Pro) */}
+            {plan.highlighted && plan.badge && (
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10">
+                <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap shadow-sm">
+                  {plan.badge}
+                </span>
+              </div>
+            )}
+            <PlanCard plan={plan} />
+          </div>
         ))}
       </div>
 

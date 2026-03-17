@@ -75,7 +75,7 @@ export function Navbar() {
               </Button>
             </Link>
             <Link href="/pricing">
-              <span className={`text-sm font-medium transition-colors hover:text-primary cursor-pointer ${isActive("/pricing") ? "text-primary" : ""}`}>
+              <span className="text-sm font-medium transition-colors hover:text-primary cursor-pointer text-muted-foreground">
                 Pricing
               </span>
             </Link>
