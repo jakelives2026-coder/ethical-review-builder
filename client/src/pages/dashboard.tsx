@@ -207,14 +207,6 @@ export default function Dashboard() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Add New Profile Card */}
-                <Card className="border-dashed flex items-center justify-center min-h-[300px] cursor-pointer hover:bg-muted/50 transition-colors" onClick={handleCreateProfile}>
-                  <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-                    <Plus className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-sm font-medium text-muted-foreground">Add New Profile</p>
-                  </CardContent>
-                </Card>
-
                 {businessProfiles?.map((profile) => (
                   <Card key={profile.id} className={isMobile ? 'border-2 transition-colors hover:border-primary/30 active:bg-muted' : ''}>
                     <CardHeader className={isMobile ? 'px-4 py-4' : ''}>
@@ -299,6 +291,14 @@ export default function Dashboard() {
                     </CardFooter>
                   </Card>
                 ))}
+
+                {/* Add New Profile Card */}
+                <Card className="border-dashed border-2 border-muted-foreground/30 flex items-center justify-center min-h-[300px] cursor-pointer hover:bg-muted/50 transition-colors" onClick={handleCreateProfile}>
+                  <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+                    <Plus className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium text-muted-foreground">Add New Profile</p>
+                  </CardContent>
+                </Card>
               </div>
             )}
           </TabsContent>
