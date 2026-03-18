@@ -348,6 +348,35 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
               />
             </div>
 
+            {/* Business Type Field */}
+            <div className="bg-card rounded-lg p-3 border border-border/50 shadow-sm transition-all duration-200">
+              <FormField
+                control={form.control}
+                name="businessType"
+                render={({ field }) => (
+                  <FormItem className="relative">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FormLabel className={`${getMobileTextStyles("label")} text-primary font-medium`}>
+                        Business Type
+                      </FormLabel>
+                    </div>
+                    <FormControl>
+                      <FormSelect
+                        value={field.value || "other"}
+                        onValueChange={field.onChange}
+                        placeholder="Select business type"
+                        options={businessTypes}
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This helps tailor the review questions for your industry
+                    </p>
+                    <FormMessage className="text-xs mt-1 font-medium" />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             {/* Business Service Field */}
             <div className="bg-card rounded-lg p-3 border border-border/50 shadow-sm transition-all duration-200">
               <FormField
@@ -411,36 +440,7 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                 )}
               />
             </div>
-            
-            {/* Business Type Field */}
-            <div className="bg-card rounded-lg p-3 border border-border/50 shadow-sm transition-all duration-200">
-              <FormField
-                control={form.control}
-                name="businessType"
-                render={({ field }) => (
-                  <FormItem className="relative">
-                    <div className="flex items-center gap-2 mb-1">
-                      <FormLabel className={`${getMobileTextStyles("label")} text-primary font-medium`}>
-                        Business Type
-                      </FormLabel>
-                    </div>
-                    <FormControl>
-                      <FormSelect
-                        value={field.value || "other"}
-                        onValueChange={field.onChange}
-                        placeholder="Select business type"
-                        options={businessTypes}
-                      />
-                    </FormControl>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      This helps tailor the review questions for your industry
-                    </p>
-                    <FormMessage className="text-xs mt-1 font-medium" />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
+
             {/* Additional Services/Products Field - Dynamic based on business type */}
             <div className="bg-card rounded-lg p-3 border border-border/50 shadow-sm transition-all duration-200">
               <FormField
