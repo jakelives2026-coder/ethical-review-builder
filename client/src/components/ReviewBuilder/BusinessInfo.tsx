@@ -5,20 +5,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, ArrowRight, HelpCircle } from "lucide-react";
 import { BusinessInfo } from "@/lib/types";
-import { 
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { 
-  getMobileTextStyles, 
-  getMobileInputStyles, 
+import {
+  getMobileTextStyles,
+  getMobileInputStyles,
   getMobileButtonStyles,
   mobileLayoutSizes
 } from "@/lib/mobile-standards";
 import { LocationInput } from "@/components/ui/location-input";
+import { GooglePlacesBusinessInput } from "@/components/ui/google-places-input";
+
+// Helper function to extract city and state from formatted address
+function shortAddress(full: string): string {
+  const parts = full.split(',');
+  if (parts.length >= 3) {
+    const city = parts[parts.length - 3]?.trim();
+    const stateZip = parts[parts.length - 2]?.trim();
+    const state = stateZip?.split(' ').find(s => /^[A-Z]{2}$/.test(s));
+    return city && state ? `${city}, ${state}` : full;
+  }
+  return full;
+}
 
 interface BusinessInfoScreenProps {
   initialData?: BusinessInfo;
@@ -64,13 +77,31 @@ export function BusinessInfoScreen({ initialData, onNext, onBack }: BusinessInfo
         </p>
         
         <div className="space-y-5">
-          <FormInput
-            label="Business Name"
-            id="business-name"
-            value={businessName}
-            onChange={(e) => setBusinessName(e.target.value)}
-            placeholder="e.g. Joe's Coffee Shop"
-          />
+          <div className="form-group">
+            <div className="flex items-center gap-2 mb-2">
+              <Label
+                htmlFor="business-name"
+                className={getMobileTextStyles("label", "font-medium text-neutral-700")}
+              >
+                Business Name
+              </Label>
+            </div>
+            <GooglePlacesBusinessInput
+              onBusinessSelect={(business) => {
+                setBusinessName(business.businessName);
+                if (business.formattedAddress) {
+                  setBusinessLocation(shortAddress(business.formattedAddress));
+                }
+                if (business.service) {
+                  setBusinessService(business.service);
+                }
+              }}
+              defaultValue={businessName}
+              placeholder="Search for your business..."
+              className={getMobileInputStyles()}
+              required={true}
+            />
+          </div>
           
           <div className="form-group">
             <div className="flex items-center gap-2 mb-2">
