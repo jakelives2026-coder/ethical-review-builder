@@ -42,7 +42,8 @@ import {
   Home,
   Link2,
   Palette,
-  MoreHorizontal
+  MoreHorizontal,
+  Plus
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { 
@@ -191,18 +192,7 @@ export default function Dashboard() {
 
         <div className={isMobile ? 'mt-0' : 'mt-6'}>
           <TabsContent value="business-profiles">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-3">
-              <h2 className="text-xl font-semibold">Your Business Profiles</h2>
-              <Button
-                variant="default"
-                size="sm"
-                className="w-full md:w-auto"
-                onClick={handleCreateProfile}
-              >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Profile
-              </Button>
-            </div>
+            <h2 className="text-xl font-semibold mb-4">Your Business Profiles</h2>
 
             {businessProfiles?.length === 0 ? (
               <Card>
@@ -217,6 +207,14 @@ export default function Dashboard() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Add New Profile Card */}
+                <Card className="border-dashed flex items-center justify-center min-h-[300px] cursor-pointer hover:bg-muted/50 transition-colors" onClick={handleCreateProfile}>
+                  <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+                    <Plus className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium text-muted-foreground">Add New Profile</p>
+                  </CardContent>
+                </Card>
+
                 {businessProfiles?.map((profile) => (
                   <Card key={profile.id} className={isMobile ? 'border-2 transition-colors hover:border-primary/30 active:bg-muted' : ''}>
                     <CardHeader className={isMobile ? 'px-4 py-4' : ''}>
