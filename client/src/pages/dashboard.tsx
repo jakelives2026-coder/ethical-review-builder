@@ -15,14 +15,20 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn, getRelationshipTypeLabel } from "@/lib/utils";
 import { Link } from "wouter";
-import { 
-  Building2, 
-  FilePlus, 
-  Star, 
-  History, 
-  Settings, 
+import {
+  Building2,
+  FilePlus,
+  Star,
+  History,
+  Settings,
   PlusCircle,
   Loader2,
   Copy,
@@ -35,7 +41,8 @@ import {
   Sparkles,
   Home,
   Link2,
-  Palette
+  Palette,
+  MoreHorizontal
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { 
@@ -252,27 +259,36 @@ export default function Dashboard() {
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 min-w-[72px]"
-                        onClick={() => setSettingsProfile(profile)}
-                      >
-                        <Palette className="h-4 w-4 mr-2" />
-                        Branding
-                      </Button>
-                      {/* Share button appears only if profile has a shareSlug (generated share link) */}
-                      {profile.shareSlug && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="flex-1 min-w-[72px]"
-                          onClick={() => window.open(`/review/${profile.shareSlug}`, '_blank')}
-                        >
-                          <Link2 className="h-4 w-4 mr-2" />
-                          Share
-                        </Button>
-                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 w-9 p-0"
+                            title="More options"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => setSettingsProfile(profile)}
+                            className="cursor-pointer"
+                          >
+                            <Palette className="h-4 w-4 mr-2" />
+                            Branding
+                          </DropdownMenuItem>
+                          {profile.shareSlug && (
+                            <DropdownMenuItem
+                              onClick={() => window.open(`/review/${profile.shareSlug}`, '_blank')}
+                              className="cursor-pointer"
+                            >
+                              <Link2 className="h-4 w-4 mr-2" />
+                              Share
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <Button
                         variant="default"
                         size="sm"
