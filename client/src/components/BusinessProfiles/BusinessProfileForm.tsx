@@ -385,7 +385,7 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                 render={({ field }) => (
                   <FormItem className="relative">
                     <FormLabel className={`${getMobileTextStyles("label")} text-primary font-medium`}>
-                      Business Service <span className="text-destructive">*</span>
+                      Primary Service <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -396,7 +396,7 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                       />
                     </FormControl>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Describe your primary service. This appears on your profile card.
+                      One-line description shown on your profile card (e.g. walk-in shower installation)
                     </p>
                     <FormMessage className="text-xs mt-1 font-medium" />
                   </FormItem>
@@ -453,19 +453,19 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                     <FormItem className="relative">
                       <div className="flex items-center gap-2 mb-1">
                         <FormLabel className={`${getMobileTextStyles("label")} text-primary font-medium`}>
-                          {config.label} <span className="text-muted-foreground">(Optional)</span>
+                          Additional Services <span className="text-muted-foreground">(Optional)</span>
                         </FormLabel>
                       </div>
                       <FormControl>
                         <FormInput
-                          placeholder=""
+                          placeholder="e.g. Bathroom remodels, tile work, fixture replacement"
                           {...field}
                           value={field.value || ""}
                           onFocus={handleInputFocus}
                         />
                       </FormControl>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {config.description}
+                        Optional. Shown to reviewers as guidance on what to mention.
                       </p>
                       <FormMessage className="text-xs mt-1 font-medium" />
                     </FormItem>
@@ -495,7 +495,7 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                       />
                     </FormControl>
                     <p className="text-xs text-muted-foreground mt-1">
-                      The name of your contact person at the business
+                      Optional. Shown to reviewers as their point of contact at the business.
                     </p>
                     <FormMessage className="text-xs mt-1 font-medium" />
                   </FormItem>
