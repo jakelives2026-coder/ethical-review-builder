@@ -238,12 +238,23 @@ export function ReviewPreview({ review, onNext, onBack, relationshipType, busine
     } catch (error) {
       console.error("Error generating Super Review:", error);
       setIsSuperReviewAnimation(false);
-      
-      toast({
-        title: "Error Creating Super Review",
-        description: "There was a problem generating your Super Review. Please try again.",
-        variant: "destructive"
-      });
+
+      // Check if this is a premium plan requirement error
+      const errorStatus = (error as any).status;
+      if (errorStatus === 403) {
+        toast({
+          title: "Super Reviews are a premium feature",
+          description: "Upgrade to Pro to unlock detailed Super Reviews. Tap to upgrade now.",
+          variant: "destructive",
+          onClick: () => window.location.href = "/pricing"
+        });
+      } else {
+        toast({
+          title: "Error Creating Super Review",
+          description: "There was a problem generating your Super Review. Please try again.",
+          variant: "destructive"
+        });
+      }
       setIsGeneratingSuperReview(false);
     }
   };
