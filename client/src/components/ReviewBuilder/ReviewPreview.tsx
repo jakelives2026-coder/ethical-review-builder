@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight, Check, Pencil, InfoIcon, AlertTriangle, Sparkles, Star, CheckCircle2, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth.tsx";
 import { generateReview } from "@/lib/openai";
 import { BusinessInfo, RelationshipType } from "@/lib/types";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -28,8 +29,10 @@ export function ReviewPreview({ review, onNext, onBack, relationshipType, busine
   const [hasFakeName, setHasFakeName] = useState(false);
   const [isGeneratingSuperReview, setIsGeneratingSuperReview] = useState(false);
   const [hasSuperReview, setHasSuperReview] = useState(false);
+  const [showUpgradePanel, setShowUpgradePanel] = useState(false);
   const reviewRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
   const isMobile = useIsMobile();
   
   // Detection patterns for fake names
@@ -242,13 +245,10 @@ export function ReviewPreview({ review, onNext, onBack, relationshipType, busine
       // Check if this is a premium plan requirement error
       const errorStatus = (error as any).status;
       if (errorStatus === 403) {
-        toast({
-          title: "Super Reviews are a premium feature",
-          description: "Upgrade to Pro to unlock detailed Super Reviews. Tap to upgrade now.",
-          variant: "destructive",
-          onClick: () => window.location.href = "/pricing"
-        });
+        // Show inline upgrade panel instead of toast for 403 error
+        setShowUpgradePanel(true);
       } else {
+        // Show red toast only for genuine errors (500, network failures, etc.)
         toast({
           title: "Error Creating Super Review",
           description: "There was a problem generating your Super Review. Please try again.",
@@ -439,10 +439,10 @@ export function ReviewPreview({ review, onNext, onBack, relationshipType, busine
         </div>
       </div>
       
-      {/* Super Review section - show either the button or a confirmation message */}
+      {/* Super Review section - show either the button/upgrade panel or a confirmation message */}
       {relationshipType && businessInfo && answers && answers.length === 3 && (
         <div className="my-6">
-          {!hasSuperReview ? (
+          {!hasSuperReview && !showUpgradePanel ? (
             // Show the Super Review button if a Super Review hasn't been generated yet
             <div className={`bg-blue-50 rounded-xl ${isMobile ? "p-4" : "p-5"} ${isMobile ? "flex flex-col" : "flex"} border border-blue-100 shadow-sm`}>
               {!isMobile && (
@@ -486,9 +486,23 @@ export function ReviewPreview({ review, onNext, onBack, relationshipType, busine
                       <span className={`${isMobile ? "font-medium" : "font-medium"}`}>
                         Create Super Review
                       </span>
+                      {user?.planType === "free" && (
+                        <span className="ml-2 text-xs bg-amber-400 text-amber-900 font-semibold px-1.5 py-0.5 rounded-full">Pro</span>
+                      )}
                     </div>
                   )}
                 </Button>
+              </div>
+            </div>
+          ) : showUpgradePanel && !hasSuperReview ? (
+            // Show inline upgrade panel for free users
+            <div className={`bg-blue-50 rounded-xl ${isMobile ? "p-4" : "p-5"} border border-blue-100 shadow-sm`}>
+              <div className="mt-3 rounded-lg bg-amber-50 border border-amber-200 p-4 text-center">
+                <p className="text-sm font-semibold text-amber-900">✨ Super Reviews are a Pro feature</p>
+                <p className="text-xs text-amber-700 mt-1">Upgrade to get longer, more detailed reviews that stand out on Google.</p>
+                <a href="/pricing" className="mt-3 inline-block w-full text-center bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors">
+                  Upgrade to Pro →
+                </a>
               </div>
             </div>
           ) : (
