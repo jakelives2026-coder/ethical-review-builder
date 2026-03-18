@@ -9,6 +9,24 @@ app.use("/api/stripe/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Content Security Policy to allow images from Google OAuth (lh3.googleusercontent.com)
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "img-src 'self' data: https: https://lh3.googleusercontent.com; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "connect-src 'self' https: wss:; " +
+    "frame-src 'self' https://maps.googleapis.com; " +
+    "object-src 'none'; " +
+    "base-uri 'self'; " +
+    "form-action 'self';"
+  );
+  next();
+});
+
 // General API rate limiter — 100 requests per 15 minutes per IP
 app.use("/api", rateLimit({
   windowMs: 15 * 60 * 1000,

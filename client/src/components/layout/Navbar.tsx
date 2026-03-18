@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth.tsx";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,7 @@ import { Loader2 } from "lucide-react";
 export function Navbar() {
   const { user, isLoading, logout } = useAuth();
   const [location] = useLocation();
+  const [imageLoadError, setImageLoadError] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -109,7 +111,13 @@ export function Navbar() {
                 {/* min 44px touch target; avatar stays visually 32px inside */}
                 <Button variant="ghost" className="relative h-11 w-11 rounded-full">
                   <Avatar className="h-8 w-8">
-                    {user.profileImageUrl && <AvatarImage src={user.profileImageUrl} alt={getDisplayName()} />}
+                    {user.profileImageUrl && !imageLoadError && (
+                      <AvatarImage
+                        src={user.profileImageUrl}
+                        alt={getDisplayName()}
+                        onError={() => setImageLoadError(true)}
+                      />
+                    )}
                     <AvatarFallback>{getInitials()}</AvatarFallback>
                   </Avatar>
                 </Button>
