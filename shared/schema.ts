@@ -65,6 +65,15 @@ export const businessProfiles = pgTable("business_profiles", {
   primaryColor: varchar("primary_color", { length: 7 }).default("#6366f1"), // hex color
   accentColor: varchar("accent_color", { length: 7 }).default("#8b5cf6"), // hex color
   welcomeMessage: text("welcome_message"),
+  // Review platform fields
+  reviewPlatforms: jsonb("review_platforms").$type<{
+    platformName: "google" | "yelp" | "trustpilot" | "bbb";
+    platformUrl: string;
+    priorityOrder: number;
+  }[]>(),
+  // Reward fields
+  rewardDescription: text("reward_description"),
+  requireProof: boolean("require_proof").default(false),
   // Shareable link fields
   shareSlug: varchar("share_slug", { length: 64 }).unique(),
   // Embed widget fields

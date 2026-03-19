@@ -145,23 +145,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         businessLocation: z.string().min(1, "Business location is required"),
         businessService: z.string().min(1, "Business service is required"),
         representativeName: z.string().optional(),
-        isPrimary: z.boolean().optional().default(false)
+        isPrimary: z.boolean().optional().default(false),
+        reviewPlatforms: z.array(z.object({
+          platformName: z.enum(["google", "yelp", "trustpilot", "bbb"]),
+          platformUrl: z.string().url("Platform URL must be valid"),
+          priorityOrder: z.number().int().min(0)
+        })).optional(),
+        rewardDescription: z.string().optional(),
+        requireProof: z.boolean().optional().default(false)
       });
-      
+
       const validatedData = schema.parse(req.body);
-      
+
       // Add the user ID
       const profile = await storage.createBusinessProfile({
         ...validatedData,
         userId: req.user!.id
       });
-      
+
       res.status(201).json(profile);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.errors });
       }
-      
+
       console.error("Error creating business profile:", error);
       res.status(500).json({ error: "Failed to create business profile" });
     }
@@ -194,7 +201,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logoUrl: z.string().url().nullable().optional(),
         primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
         accentColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
-        welcomeMessage: z.string().max(500).nullable().optional()
+        welcomeMessage: z.string().max(500).nullable().optional(),
+        // Review platform and reward fields
+        reviewPlatforms: z.array(z.object({
+          platformName: z.enum(["google", "yelp", "trustpilot", "bbb"]),
+          platformUrl: z.string().url("Platform URL must be valid"),
+          priorityOrder: z.number().int().min(0)
+        })).optional(),
+        rewardDescription: z.string().optional(),
+        requireProof: z.boolean().optional()
       });
       
       const validatedData = schema.parse(req.body);

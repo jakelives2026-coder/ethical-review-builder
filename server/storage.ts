@@ -251,26 +251,27 @@ export class DatabaseStorage implements IStorage {
 
   async createBusinessProfile(profile: InsertBusinessProfile): Promise<BusinessProfile> {
     const now = new Date();
-    
+
     // If this is the first profile or marked as primary, ensure it's the only primary
     if (profile.isPrimary) {
       await db.update(businessProfiles)
         .set({ isPrimary: false })
         .where(eq(businessProfiles.userId, profile.userId));
     }
-    
+
     const [newProfile] = await db.insert(businessProfiles).values({
       ...profile,
+      reviewPlatforms: profile.reviewPlatforms as any,
       createdAt: now,
       updatedAt: now
     }).returning();
-    
+
     return newProfile;
   }
 
   async updateBusinessProfile(id: number, data: Partial<Omit<BusinessProfile, "id">>): Promise<BusinessProfile | undefined> {
     const now = new Date();
-    
+
     // If setting as primary, unset any other primary profiles
     if (data.isPrimary) {
       const [profile] = await db.select().from(businessProfiles).where(eq(businessProfiles.id, id));
@@ -283,15 +284,22 @@ export class DatabaseStorage implements IStorage {
           ));
       }
     }
-    
+
+    const updateData: any = {
+      ...data,
+      updatedAt: now
+    };
+
+    // Ensure reviewPlatforms is properly typed
+    if (data.reviewPlatforms !== undefined) {
+      updateData.reviewPlatforms = data.reviewPlatforms as any;
+    }
+
     const [updatedProfile] = await db.update(businessProfiles)
-      .set({
-        ...data,
-        updatedAt: now
-      })
+      .set(updateData)
       .where(eq(businessProfiles.id, id))
       .returning();
-      
+
     return updatedProfile;
   }
 
