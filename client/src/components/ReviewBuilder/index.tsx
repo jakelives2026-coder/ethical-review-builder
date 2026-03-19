@@ -65,6 +65,7 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
   const [currentStep, setCurrentStep] = useState<Step>(Step.Welcome);
   const [formData, setFormData] = useState<ReviewData>(initialState);
   const [reviewReady, setReviewReady] = useState(false);
+  const [reviewLimitReached, setReviewLimitReached] = useState(false);
   const { toast } = useToast();
   const { user, isLoading } = useAuth();
   const hasRestoredSession = useRef(false);
@@ -157,6 +158,7 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
   useEffect(() => {
     if (visibleStep !== Step.Generating) return;
     setReviewReady(false);
+    setReviewLimitReached(false);
     generateReview();
   }, [visibleStep]);
 
@@ -385,42 +387,35 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
       if (!response.ok) {
         // Handle specific error codes
         if (response.status === 403) {
+          // For limit-reached errors during initial generation, show inline panel in ReviewGeneration
+          // Check if this is a free-tier monthly limit error
           try {
             const errorData = await response.json();
-            const { error: errorMessage, upgradeUrl } = errorData;
-
-            toast({
-              title: "Free reviews limit reached",
-              description: errorMessage || "You've used all your free reviews. Upgrade to Pro for unlimited reviews.",
-              variant: "destructive",
-              action: upgradeUrl ? (
-                <button
-                  onClick={() => window.location.href = upgradeUrl}
-                  className="bg-primary text-white px-3 py-1 rounded text-sm font-medium hover:bg-primary/90"
-                >
-                  Upgrade
-                </button>
-              ) : undefined
-            });
-            // Do NOT reset the wizard for rate-limit errors
-            return;
+            const { error: errorMessage } = errorData;
+            if (errorMessage && errorMessage.includes("used all")) {
+              setReviewReady(true); // Signal animation complete to show limit panel
+              setReviewLimitReached(true);
+              return;
+            }
           } catch {
-            // If JSON parsing fails, show generic message
-            toast({
-              title: "Free reviews limit reached",
-              description: "You've used all your free reviews. Upgrade to Pro for unlimited reviews.",
-              variant: "destructive",
-              action: (
-                <button
-                  onClick={() => window.location.href = "/pricing"}
-                  className="bg-primary text-white px-3 py-1 rounded text-sm font-medium hover:bg-primary/90"
-                >
-                  Upgrade
-                </button>
-              )
-            });
-            return;
+            // If JSON parsing fails, treat as other 403
           }
+
+          // For other 403 errors (Super Review, etc), show toast
+          toast({
+            title: "Free reviews limit reached",
+            description: "You've used all your free reviews. Upgrade to Pro for unlimited reviews.",
+            variant: "destructive",
+            action: (
+              <button
+                onClick={() => window.location.href = "/pricing"}
+                className="bg-primary text-white px-3 py-1 rounded text-sm font-medium hover:bg-primary/90"
+              >
+                Upgrade
+              </button>
+            )
+          });
+          return;
         }
 
         // Handle other HTTP errors
@@ -596,6 +591,7 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
             apiReady={reviewReady}
             onComplete={handleGenerationComplete}
             businessInfo={formData.businessInfo}
+            limitReached={reviewLimitReached}
           />
         )}
 

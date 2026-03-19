@@ -8,9 +8,10 @@ interface ReviewGenerationProps {
   onComplete: () => void;
   apiReady: boolean;
   businessInfo?: BusinessInfo;
+  limitReached?: boolean;
 }
 
-export function ReviewGeneration({ onComplete, apiReady, businessInfo }: ReviewGenerationProps) {
+export function ReviewGeneration({ onComplete, apiReady, businessInfo, limitReached }: ReviewGenerationProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [animationDone, setAnimationDone] = useState(false);
   const [typedText, setTypedText] = useState("");
@@ -142,33 +143,65 @@ export function ReviewGeneration({ onComplete, apiReady, businessInfo }: ReviewG
   
   return (
     <div className="pt-4 pb-2 text-center px-3">
-      <h2 className={cn(
-        "font-bold text-neutral-800 mb-2",
-        isMobile ? "text-xl" : "text-2xl"
-      )}>
-        Creating your review
-      </h2>
-      <p className={cn(
-        "text-neutral-600 mb-4",
-        isMobile ? "text-sm px-2" : ""
-      )}>
-        {businessInfo?.businessName 
-          ? `Please wait while our AI crafts the perfect review for ${businessInfo.businessName}`
-          : "Please wait while our AI crafts the perfect review"}
-      </p>
-      
-      {/* Progress bar */}
-      <div className={cn(
-        "w-full mx-auto mb-6 bg-neutral-200 rounded-full h-2.5 overflow-hidden",
-        isMobile ? "max-w-[95%]" : "max-w-md"
-      )}>
-        <div 
-          className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out"
-          style={{ width: `${progress}%` }}
-        ></div>
-      </div>
-      
-      {/* Animation container */}
+      {/* Show upgrade panel if monthly limit is reached */}
+      {limitReached ? (
+        <div className={cn(
+          "rounded-xl border shadow-sm mt-4",
+          isMobile ? "p-4" : "p-5",
+          "bg-amber-50 border-amber-200"
+        )}>
+          <h2 className={cn(
+            "font-bold text-neutral-800 mb-3",
+            isMobile ? "text-lg" : "text-xl"
+          )}>
+            Monthly review limit reached
+          </h2>
+          <p className={cn(
+            "text-neutral-600 mb-4",
+            isMobile ? "text-sm" : "text-base"
+          )}>
+            You've used your 3 free reviews this month. Upgrade to Pro to keep generating unlimited reviews.
+          </p>
+          <a
+            href="/pricing"
+            className="inline-block bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+          >
+            Upgrade to Pro →
+          </a>
+        </div>
+      ) : (
+        <>
+          <h2 className={cn(
+            "font-bold text-neutral-800 mb-2",
+            isMobile ? "text-xl" : "text-2xl"
+          )}>
+            Creating your review
+          </h2>
+          <p className={cn(
+            "text-neutral-600 mb-4",
+            isMobile ? "text-sm px-2" : ""
+          )}>
+            {businessInfo?.businessName
+              ? `Please wait while our AI crafts the perfect review for ${businessInfo.businessName}`
+              : "Please wait while our AI crafts the perfect review"}
+          </p>
+        </>
+      )}
+
+      {!limitReached && (
+        <>
+          {/* Progress bar */}
+          <div className={cn(
+            "w-full mx-auto mb-6 bg-neutral-200 rounded-full h-2.5 overflow-hidden",
+            isMobile ? "max-w-[95%]" : "max-w-md"
+          )}>
+            <div
+              className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+
+          {/* Animation container */}
       <div className={cn(
         "relative mx-auto bg-neutral-50 rounded-xl shadow-lg mb-4 overflow-hidden",
         isMobile ? "p-4 min-h-[180px] max-w-[95%]" : "p-6 min-h-[220px] max-w-lg"
@@ -285,6 +318,8 @@ export function ReviewGeneration({ onComplete, apiReady, businessInfo }: ReviewG
           </div>
         )}
       </div>
+        </>
+      )}
     </div>
   );
 }
