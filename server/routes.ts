@@ -10,6 +10,8 @@ import { db } from "./db";
 import { businessProfiles, reviewTemplates, users } from "@shared/schema";
 import { stripe } from "./stripe";
 import { PLAN_PRICE_MAP, PRICE_PLAN_MAP } from "./stripe-config";
+import { randomUUID } from "crypto";
+import { Resend } from "resend";
 
 // AI generation limiter — 20 requests per 15 minutes per IP
 const generateReviewLimiter = rateLimit({
@@ -1486,6 +1488,223 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
     } catch (error) {
       console.error("Stripe portal error:", error);
       res.status(500).json({ error: "Failed to create portal session" });
+    }
+  });
+
+  // =====================
+  // Review Drip Campaign APIs
+  // =====================
+
+  // POST /api/review-requests - Create a new review request and send drip email
+  app.post("/api/review-requests", async (req, res) => {
+    try {
+      const schema = z.object({
+        businessProfileId: z.number(),
+        reviewerEmail: z.string().email(),
+        reviewText: z.string().min(1),
+      });
+
+      const validatedData = schema.parse(req.body);
+
+      // Load business profile with review platforms
+      const [profile] = await db.select().from(businessProfiles)
+        .where(eq(businessProfiles.id, validatedData.businessProfileId));
+
+      if (!profile) {
+        return res.status(404).json({ error: "Business profile not found" });
+      }
+
+      // Build platforms sequence from enabled platforms with URLs
+      const platformsSequence = (profile.reviewPlatforms as any[] || [])
+        .filter((p: any) => p.platformUrl)
+        .sort((a: any, b: any) => (a.priorityOrder || 0) - (b.priorityOrder || 0))
+        .map((p: any) => p.platformName);
+
+      // Generate confirmation tokens for each platform
+      const confirmationTokens: Record<string, string> = {};
+      for (const platform of platformsSequence) {
+        confirmationTokens[platform] = randomUUID();
+      }
+
+      // Initialize status per platform
+      const statusPerPlatform: Record<string, "pending" | "emailed" | "confirmed"> = {};
+      for (const platform of platformsSequence) {
+        statusPerPlatform[platform] = "pending";
+      }
+
+      // Create review request
+      const reviewRequest = await storage.createReviewRequest({
+        businessProfileId: validatedData.businessProfileId,
+        reviewerEmail: validatedData.reviewerEmail,
+        reviewText: validatedData.reviewText,
+        platformsSequence,
+        currentPlatformIndex: 0,
+        statusPerPlatform,
+        confirmationTokens,
+      });
+
+      // Send Email 1 with first platform link
+      if (platformsSequence.length > 0) {
+        const firstPlatform = platformsSequence[0];
+        const firstPlatformData = (profile.reviewPlatforms as any[] || [])
+          .find((p: any) => p.platformName === firstPlatform);
+
+        const confirmToken = confirmationTokens[firstPlatform];
+        const appUrl = (process.env.APP_URL || "https://ethicalreviewbuilder.com").trim();
+        const confirmUrl = `${appUrl}/api/review-requests/confirm?token=${confirmToken}&platform=${firstPlatform}`;
+
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const fromEmail = (process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev").trim();
+
+        // Build email HTML
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { text-align: center; margin-bottom: 30px; }
+    .header h1 { margin: 0; font-size: 24px; color: #000; }
+    .review-box { background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    .review-box p { margin: 0; white-space: pre-wrap; }
+    .cta-button { display: inline-block; background: #1a1a1a; color: white; padding: 14px 24px; border-radius: 6px; text-decoration: none; font-weight: 600; margin: 20px 0; }
+    .secondary-link { text-align: center; margin: 20px 0; }
+    .secondary-link a { color: #0066cc; text-decoration: none; font-size: 14px; }
+    .note { color: #666; font-size: 14px; margin-top: 15px; }
+    .reward-section { background: #f0f8ff; padding: 15px; border-radius: 6px; margin-top: 20px; }
+    .footer { text-align: center; color: #999; font-size: 12px; margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>${profile.businessName}</h1>
+    </div>
+
+    <p>We'd love your feedback! Here's the review we prepared for you:</p>
+
+    <div class="review-box">
+      <p>${validatedData.reviewText}</p>
+    </div>
+
+    <p style="text-align: center; margin-bottom: 20px; font-size: 14px; color: #666;">
+      Copy the review above or use the button below to post it.
+    </p>
+
+    <div style="text-align: center;">
+      <a href="${firstPlatformData?.platformUrl}" class="cta-button">
+        Post on ${firstPlatform.charAt(0).toUpperCase() + firstPlatform.slice(1)} →
+      </a>
+    </div>
+
+    <div class="secondary-link">
+      <a href="${confirmUrl}">I've posted my review ✓</a>
+    </div>
+
+    ${platformsSequence.length > 1 ? `
+      <p class="note">
+        Next: we'll send you the ${platformsSequence[1].charAt(0).toUpperCase() + platformsSequence[1].slice(1)} link after you confirm.
+      </p>
+    ` : ''}
+
+    ${profile.rewardDescription ? `
+      <div class="reward-section">
+        <strong>Reward:</strong> ${profile.rewardDescription}
+      </div>
+    ` : ''}
+
+    <div class="footer">
+      <p>Thank you for supporting ${profile.businessName}!</p>
+    </div>
+  </div>
+</body>
+</html>
+        `;
+
+        try {
+          await resend.emails.send({
+            from: `${profile.businessName} <${fromEmail}>`,
+            to: validatedData.reviewerEmail,
+            subject: `Share your experience with ${profile.businessName}`,
+            html: emailHtml,
+          });
+
+          // Mark first platform as emailed
+          statusPerPlatform[firstPlatform] = "emailed";
+          await storage.updateReviewRequest(reviewRequest.id, { statusPerPlatform });
+        } catch (emailError) {
+          console.error("Email send error:", emailError);
+        }
+      }
+
+      res.status(201).json(reviewRequest);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Error creating review request:", error);
+      res.status(500).json({ error: "Failed to create review request" });
+    }
+  });
+
+  // GET /api/review-requests/confirm - Confirm review posted and mark platform as confirmed
+  app.get("/api/review-requests/confirm", async (req, res) => {
+    try {
+      const { token, platform } = req.query;
+
+      if (!token || !platform || typeof token !== "string" || typeof platform !== "string") {
+        return res.status(400).send("Missing or invalid token/platform");
+      }
+
+      // Find review request by token
+      const reviewRequest = await storage.getReviewRequestByToken(token);
+      if (!reviewRequest) {
+        return res.status(404).send("Review request not found");
+      }
+
+      // Update status for this platform to 'confirmed'
+      const statusPerPlatform = reviewRequest.statusPerPlatform || {};
+      statusPerPlatform[platform] = "confirmed";
+
+      await storage.updateReviewRequest(reviewRequest.id, {
+        statusPerPlatform,
+      });
+
+      // Return thank you HTML
+      const thankYouHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+    .container { max-width: 600px; margin: 50px auto; padding: 40px; background: white; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h1 { color: #000; margin: 0 0 10px 0; }
+    p { color: #666; margin: 0 0 20px 0; }
+    .checkmark { font-size: 60px; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="checkmark">✓</div>
+    <h1>Thank You!</h1>
+    <p>Your review has been confirmed and posted successfully.</p>
+    <p style="margin-top: 30px; font-size: 14px; color: #999;">
+      We truly appreciate your feedback!
+    </p>
+  </div>
+</body>
+</html>
+      `;
+
+      res.type("text/html").send(thankYouHtml);
+    } catch (error) {
+      console.error("Error confirming review:", error);
+      res.status(500).send("An error occurred");
     }
   });
 

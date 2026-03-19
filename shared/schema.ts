@@ -220,5 +220,43 @@ export const insertReviewSchema = createInsertSchema(reviews).omit({
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type Review = typeof reviews.$inferSelect;
 
+// Review requests for drip campaign
+export const reviewRequests = pgTable("review_requests", {
+  id: serial("id").primaryKey(),
+  businessProfileId: integer("business_profile_id").notNull().references(() => businessProfiles.id),
+  reviewerEmail: text("reviewer_email").notNull(),
+  reviewText: text("review_text").notNull(),
+  // Ordered array of platform names to send to, e.g. ['google', 'yelp']
+  platformsSequence: jsonb("platforms_sequence").$type<("google" | "yelp" | "trustpilot" | "bbb")[]>(),
+  // Current position in platformsSequence (0-indexed)
+  currentPlatformIndex: integer("current_platform_index").default(0).notNull(),
+  // Status per platform: 'pending' | 'emailed' | 'confirmed'
+  statusPerPlatform: jsonb("status_per_platform").$type<Record<string, "pending" | "emailed" | "confirmed">>(),
+  // Unique UUID token per platform for confirmation links
+  confirmationTokens: jsonb("confirmation_tokens").$type<Record<string, string>>(),
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    businessProfileIdIdx: index("review_requests_business_profile_id_idx").on(table.businessProfileId),
+    reviewerEmailIdx: index("review_requests_reviewer_email_idx").on(table.reviewerEmail),
+  };
+});
+
+export const reviewRequestsRelations = relations(reviewRequests, ({ one }) => ({
+  businessProfile: one(businessProfiles, {
+    fields: [reviewRequests.businessProfileId],
+    references: [businessProfiles.id],
+  }),
+}));
+
+export const insertReviewRequestSchema = createInsertSchema(reviewRequests).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertReviewRequest = z.infer<typeof insertReviewRequestSchema>;
+export type ReviewRequest = typeof reviewRequests.$inferSelect;
+
 // Re-export auth models for Replit Auth
 export * from "./models/auth";

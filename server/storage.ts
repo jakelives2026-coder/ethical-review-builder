@@ -1,8 +1,9 @@
-import { 
-  users, type User, type InsertUser, 
+import {
+  users, type User, type InsertUser,
   businessProfiles, type BusinessProfile, type InsertBusinessProfile,
   reviews, type Review, type InsertReview,
-  reviewTemplates, type ReviewTemplate, type InsertReviewTemplate
+  reviewTemplates, type ReviewTemplate, type InsertReviewTemplate,
+  reviewRequests, type ReviewRequest, type InsertReviewRequest
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, desc, not } from "drizzle-orm";
@@ -65,6 +66,12 @@ export interface IStorage {
   createReview(review: InsertReview): Promise<Review>;
   updateReview(id: number, data: Partial<Omit<Review, "id">>): Promise<Review | undefined>;
   deleteReview(id: number): Promise<boolean>;
+
+  // Review request operations (drip campaign)
+  getReviewRequest(id: number): Promise<ReviewRequest | undefined>;
+  getReviewRequestByToken(token: string): Promise<(ReviewRequest & { platformName?: string }) | undefined>;
+  createReviewRequest(request: InsertReviewRequest): Promise<ReviewRequest>;
+  updateReviewRequest(id: number, data: Partial<Omit<ReviewRequest, "id">>): Promise<ReviewRequest | undefined>;
 }
 
 // Ensures the session table and index exist using IF NOT EXISTS so cold starts
@@ -497,6 +504,63 @@ export class DatabaseStorage implements IStorage {
       .where(eq(reviews.id, id))
       .returning();
     return !!deletedReview;
+  }
+
+  // Review request operations
+  async getReviewRequest(id: number): Promise<ReviewRequest | undefined> {
+    const [request] = await db.select().from(reviewRequests).where(eq(reviewRequests.id, id));
+    return request;
+  }
+
+  async getReviewRequestByToken(token: string): Promise<(ReviewRequest & { platformName?: string }) | undefined> {
+    // Search for token in confirmationTokens JSONB
+    const [request] = await db.select().from(reviewRequests)
+      .where(eq(reviewRequests.id, eq(reviewRequests.id, reviewRequests.id))) // This is a placeholder, actual search below
+      .limit(1);
+
+    // For token lookup, we need to scan the table since tokens are in JSONB
+    const requests = await db.select().from(reviewRequests);
+    for (const req of requests) {
+      const tokens = req.confirmationTokens as Record<string, string> | null;
+      if (tokens) {
+        for (const [platform, tkn] of Object.entries(tokens)) {
+          if (tkn === token) {
+            return { ...req, platformName: platform };
+          }
+        }
+      }
+    }
+    return undefined;
+  }
+
+  async createReviewRequest(request: InsertReviewRequest): Promise<ReviewRequest> {
+    const insertData: any = {
+      businessProfileId: request.businessProfileId,
+      reviewerEmail: request.reviewerEmail,
+      reviewText: request.reviewText,
+      currentPlatformIndex: request.currentPlatformIndex ?? 0,
+    };
+
+    if (request.platformsSequence) {
+      insertData.platformsSequence = request.platformsSequence as any;
+    }
+    if (request.statusPerPlatform) {
+      insertData.statusPerPlatform = request.statusPerPlatform as any;
+    }
+    if (request.confirmationTokens) {
+      insertData.confirmationTokens = request.confirmationTokens;
+    }
+
+    const [newRequest] = await db.insert(reviewRequests).values(insertData).returning();
+    return newRequest;
+  }
+
+  async updateReviewRequest(id: number, data: Partial<Omit<ReviewRequest, "id">>): Promise<ReviewRequest | undefined> {
+    const [updatedRequest] = await db.update(reviewRequests)
+      .set(data as any)
+      .where(eq(reviewRequests.id, id))
+      .returning();
+    return updatedRequest;
   }
 }
 
