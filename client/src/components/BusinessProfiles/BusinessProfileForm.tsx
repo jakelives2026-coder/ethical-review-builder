@@ -6,7 +6,7 @@ import { insertBusinessProfileSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Loader2, Search, MapPin } from "lucide-react";
+import { Loader2, Search, MapPin, ArrowUp, ArrowDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -93,6 +93,13 @@ const formSchema = insertBusinessProfileSchema.extend({
   businessType: z.string().optional(),
   representativeName: z.string().optional(),
   isPrimary: z.boolean().optional(),
+  reviewPlatforms: z.array(z.object({
+    platformName: z.enum(["google", "yelp", "trustpilot", "bbb"]),
+    platformUrl: z.string().url("Platform URL must be valid").or(z.literal("")),
+    priorityOrder: z.number().int().min(0)
+  })).optional(),
+  rewardDescription: z.string().optional(),
+  requireProof: z.boolean().optional(),
 });
 
 // Define the props for the component
@@ -108,6 +115,13 @@ type BusinessProfileFormProps = {
     services?: string;
     representativeName?: string;
     isPrimary?: boolean;
+    reviewPlatforms?: Array<{
+      platformName: "google" | "yelp" | "trustpilot" | "bbb";
+      platformUrl: string;
+      priorityOrder: number;
+    }>;
+    rewardDescription?: string;
+    requireProof?: boolean;
   };
   userId: number;
 };
@@ -119,7 +133,7 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Function to scroll focused input into view (for mobile)
-  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (isMobile && dialogRef.current) {
       // Add visual indicator to the focused field
       const formItem = e.target.closest('.bg-card');
@@ -185,6 +199,9 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
       services: editData?.services || "",
       representativeName: editData?.representativeName || "",
       isPrimary: editData?.isPrimary || false,
+      reviewPlatforms: editData?.reviewPlatforms || [],
+      rewardDescription: editData?.rewardDescription || "",
+      requireProof: editData?.requireProof || false,
     },
   });
 
@@ -529,7 +546,187 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                 )}
               />
             </div>
-            
+
+            {/* Review Platforms Section */}
+            <div className="bg-card rounded-lg p-4 border border-border/50 shadow-sm transition-all duration-200 mt-6">
+              <h3 className={`${getMobileTextStyles("label")} text-primary font-semibold mb-4`}>
+                Review Platforms <span className="text-muted-foreground text-xs font-normal">(Optional)</span>
+              </h3>
+              <p className="text-xs text-muted-foreground mb-4">
+                Select review platforms and set their order. Platform 1 will be sent first in your review drip campaign.
+              </p>
+
+              {/* Platform Rows */}
+              {["google", "yelp", "trustpilot", "bbb"].map((platformName: string, index: number) => {
+                const platforms = form.watch("reviewPlatforms") || [];
+                const platformData = platforms.find((p) => p.platformName === platformName);
+                const platformIndex = platforms.findIndex((p) => p.platformName === platformName);
+                const isEnabled = platformIndex !== -1;
+
+                return (
+                  <div key={platformName} className="mb-4 pb-4 border-b border-border/30 last:border-b-0 last:mb-0 last:pb-0">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Checkbox
+                        checked={isEnabled}
+                        onCheckedChange={(checked) => {
+                          const newPlatforms = [...platforms];
+                          if (checked) {
+                            // Add platform with priority order (next position)
+                            newPlatforms.push({
+                              platformName: platformName as "google" | "yelp" | "trustpilot" | "bbb",
+                              platformUrl: "",
+                              priorityOrder: newPlatforms.length + 1,
+                            });
+                          } else if (platformIndex !== -1) {
+                            // Remove platform and reorder
+                            newPlatforms.splice(platformIndex, 1);
+                            newPlatforms.forEach((p, i) => {
+                              p.priorityOrder = i + 1;
+                            });
+                          }
+                          form.setValue("reviewPlatforms", newPlatforms);
+                        }}
+                        className="h-4 w-4"
+                      />
+                      <label className="text-sm font-medium capitalize cursor-pointer">
+                        {platformName === "bbb" ? "BBB" : platformName.charAt(0).toUpperCase() + platformName.slice(1)}
+                      </label>
+                      {isEnabled && (
+                        <div className="ml-auto flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (platformIndex > 0) {
+                                const newPlatforms = [...platforms];
+                                const temp = newPlatforms[platformIndex];
+                                newPlatforms[platformIndex] = newPlatforms[platformIndex - 1];
+                                newPlatforms[platformIndex - 1] = temp;
+                                newPlatforms.forEach((p, i) => {
+                                  p.priorityOrder = i + 1;
+                                });
+                                form.setValue("reviewPlatforms", newPlatforms);
+                              }
+                            }}
+                            disabled={platformIndex === 0}
+                            className="p-1 hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed rounded"
+                            title="Move up"
+                          >
+                            <ArrowUp className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (platformIndex < platforms.length - 1) {
+                                const newPlatforms = [...platforms];
+                                const temp = newPlatforms[platformIndex];
+                                newPlatforms[platformIndex] = newPlatforms[platformIndex + 1];
+                                newPlatforms[platformIndex + 1] = temp;
+                                newPlatforms.forEach((p, i) => {
+                                  p.priorityOrder = i + 1;
+                                });
+                                form.setValue("reviewPlatforms", newPlatforms);
+                              }
+                            }}
+                            disabled={platformIndex === platforms.length - 1}
+                            className="p-1 hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed rounded"
+                            title="Move down"
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </button>
+                          {isEnabled && (
+                            <span className="text-xs text-muted-foreground font-medium ml-2">
+                              #{platformData?.priorityOrder}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {isEnabled && (
+                      <div className="ml-6">
+                        <Input
+                          placeholder="https://g.page/r/your-business/review"
+                          value={platformData?.platformUrl || ""}
+                          onChange={(e) => {
+                            const newPlatforms = [...platforms];
+                            if (platformIndex !== -1) {
+                              newPlatforms[platformIndex].platformUrl = e.target.value;
+                              form.setValue("reviewPlatforms", newPlatforms);
+                            }
+                          }}
+                          onFocus={handleInputFocus}
+                          className="text-sm"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Direct link to your review page
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Reviewer Reward Section */}
+            <div className="bg-card rounded-lg p-4 border border-border/50 shadow-sm transition-all duration-200">
+              <h3 className={`${getMobileTextStyles("label")} text-primary font-semibold mb-4`}>
+                Reviewer Reward <span className="text-muted-foreground text-xs font-normal">(Optional)</span>
+              </h3>
+
+              {/* Reward Description */}
+              <div className="mb-4">
+                <FormField
+                  control={form.control}
+                  name="rewardDescription"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={`${getMobileTextStyles("label")} text-sm font-medium`}>
+                        Reward Description
+                      </FormLabel>
+                      <FormControl>
+                        <textarea
+                          placeholder="e.g. Show this email to your server for a free dessert"
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          onFocus={handleInputFocus}
+                          className="w-full min-h-20 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        />
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Optional. This message will be shown to reviewers after they submit their review.
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Require Proof Checkbox */}
+              <FormField
+                control={form.control}
+                name="requireProof"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="mt-0.5 h-4 w-4 rounded border border-muted-foreground/40 data-[state=checked]:border-primary"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className={`${getMobileTextStyles("label")} text-sm font-medium cursor-pointer`}>
+                        Require Proof
+                      </FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        Ask reviewers to upload proof (screenshot, photo) before showing the reward
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
             {/* Form Buttons */}
             <div className={`${getMobileButtonContainerStyles()} mt-6 gap-3`}>
               <Button
