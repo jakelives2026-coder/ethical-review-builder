@@ -455,7 +455,6 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
   
   // Start over
   const handleStartOver = () => {
-    sessionStorage.removeItem(SESSION_KEY);
     setFormData({
       businessType: null,
       relationship: null,
@@ -480,6 +479,7 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
     });
     setReviewReady(false);
     goToStep(Step.Welcome);
+    sessionStorage.removeItem(SESSION_KEY);
   };
 
   // Function to render the restart button when appropriate

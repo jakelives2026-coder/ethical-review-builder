@@ -17,6 +17,7 @@ import VerifyEmailPage from "@/pages/verify-email-page";
 import EmailPendingPage from "@/pages/email-pending-page";
 import PrivacyPage from "@/pages/privacy-page";
 import TermsPage from "@/pages/terms-page";
+import ContactPage from "@/pages/contact-page";
 import PricingPage from "@/pages/pricing-page";
 import Dashboard from "@/pages/dashboard";
 import ProfilePage from "@/pages/profile-page";
@@ -35,6 +36,7 @@ function Router() {
       <ProtectedRoute path="/email-pending" component={EmailPendingPage} allowUnverified={true} />
       <Route path="/privacy" component={PrivacyPage} />
       <Route path="/terms" component={TermsPage} />
+      <Route path="/contact" component={ContactPage} />
       <Route path="/pricing" component={PricingPage} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/profile" component={ProfilePage} />

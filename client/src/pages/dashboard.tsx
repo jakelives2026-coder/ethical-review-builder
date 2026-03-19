@@ -347,7 +347,7 @@ export default function Dashboard() {
                         )}
                       </CardTitle>
                       <CardDescription className={getMobileTextStyles('label')}>
-                        {review.businessLocation} • Reviewer: {getRelationshipTypeLabel(review.relationshipType)}
+                        {shortAddress(review.businessLocation)} • Reviewer: {getRelationshipTypeLabel(review.relationshipType)}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className={isMobile ? 'px-4 py-2' : ''}>
