@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { 
   Dialog, 
   DialogContent, 
@@ -565,34 +566,34 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
 
                 return (
                   <div key={platformName} className="mb-4 pb-4 border-b border-border/30 last:border-b-0 last:mb-0 last:pb-0">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Checkbox
-                        checked={isEnabled}
-                        onCheckedChange={(checked) => {
-                          const newPlatforms = [...platforms];
-                          if (checked) {
-                            // Add platform with priority order (next position)
-                            newPlatforms.push({
-                              platformName: platformName as "google" | "yelp" | "trustpilot" | "bbb",
-                              platformUrl: "",
-                              priorityOrder: newPlatforms.length + 1,
-                            });
-                          } else if (platformIndex !== -1) {
-                            // Remove platform and reorder
-                            newPlatforms.splice(platformIndex, 1);
-                            newPlatforms.forEach((p, i) => {
-                              p.priorityOrder = i + 1;
-                            });
-                          }
-                          form.setValue("reviewPlatforms", newPlatforms);
-                        }}
-                        className="h-4 w-4"
-                      />
-                      <label className="text-sm font-medium capitalize cursor-pointer">
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="text-sm font-medium capitalize">
                         {platformName === "bbb" ? "BBB" : platformName.charAt(0).toUpperCase() + platformName.slice(1)}
                       </label>
-                      {isEnabled && (
-                        <div className="ml-auto flex items-center gap-1">
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          checked={isEnabled}
+                          onCheckedChange={(checked) => {
+                            const newPlatforms = [...platforms];
+                            if (checked) {
+                              // Add platform with priority order (next position)
+                              newPlatforms.push({
+                                platformName: platformName as "google" | "yelp" | "trustpilot" | "bbb",
+                                platformUrl: "",
+                                priorityOrder: newPlatforms.length + 1,
+                              });
+                            } else if (platformIndex !== -1) {
+                              // Remove platform and reorder
+                              newPlatforms.splice(platformIndex, 1);
+                              newPlatforms.forEach((p, i) => {
+                                p.priorityOrder = i + 1;
+                              });
+                            }
+                            form.setValue("reviewPlatforms", newPlatforms);
+                          }}
+                        />
+                        {isEnabled && (
+                          <div className="flex items-center gap-1">
                           <button
                             type="button"
                             onClick={() => {
@@ -634,12 +635,13 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                             <ArrowDown className="h-4 w-4" />
                           </button>
                           {isEnabled && (
-                            <span className="text-xs text-muted-foreground font-medium ml-2">
+                            <span className="text-xs text-muted-foreground font-medium">
                               #{platformData?.priorityOrder}
                             </span>
                           )}
                         </div>
-                      )}
+                        )}
+                      </div>
                     </div>
 
                     {isEnabled && (
