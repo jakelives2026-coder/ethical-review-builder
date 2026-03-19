@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { WelcomeScreen } from "./WelcomeScreen";
 import { BusinessTypeScreen } from "./BusinessTypeScreen";
 import { RelationshipTypeScreen } from "./RelationshipType";
@@ -176,6 +176,11 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
       }, 400);
     }, 300);
   };
+
+  // Stable callback for generation completion to prevent stale closures
+  const handleGenerationComplete = useCallback(() => {
+    goToStep(Step.Preview);
+  }, []);
   
   // Set business type
   const handleSetBusinessType = (businessType: BusinessType) => {
@@ -589,7 +594,7 @@ export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}
         {visibleStep === Step.Generating && (
           <ReviewGeneration
             apiReady={reviewReady}
-            onComplete={() => goToStep(Step.Preview)}
+            onComplete={handleGenerationComplete}
             businessInfo={formData.businessInfo}
           />
         )}
