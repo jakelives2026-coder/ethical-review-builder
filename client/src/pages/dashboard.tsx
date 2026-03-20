@@ -459,17 +459,6 @@ export default function Dashboard() {
                 currentCompany={user?.company}
               />
 
-              {sendRequestProfile && (
-                <SendReviewRequestDialog
-                  isOpen={isSendRequestOpen}
-                  onClose={() => {
-                    setIsSendRequestOpen(false);
-                    setSendRequestProfile(null);
-                  }}
-                  businessProfile={sendRequestProfile}
-                />
-              )}
-
               {/* Review Usage Card for Free Users */}
               {user?.planType === "free" && (
                 <Card className={isMobile ? 'border-2 transition-colors hover:border-primary/30 active:bg-muted' : ''}>
@@ -568,7 +557,19 @@ export default function Dashboard() {
           </TabsContent>
         </div>
       </Tabs>
-      
+
+      {/* Send Review Request Dialog */}
+      {sendRequestProfile && (
+        <SendReviewRequestDialog
+          isOpen={isSendRequestOpen}
+          onClose={() => {
+            setIsSendRequestOpen(false);
+            setSendRequestProfile(null);
+          }}
+          businessProfile={sendRequestProfile}
+        />
+      )}
+
       {/* Mobile Bottom Navigation */}
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
