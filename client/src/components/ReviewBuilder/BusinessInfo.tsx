@@ -92,9 +92,6 @@ export function BusinessInfoScreen({ initialData, onNext, onBack }: BusinessInfo
                 if (business.formattedAddress) {
                   setBusinessLocation(shortAddress(business.formattedAddress));
                 }
-                if (business.service) {
-                  setBusinessService(business.service);
-                }
               }}
               defaultValue={businessName}
               placeholder="Search for your business..."
