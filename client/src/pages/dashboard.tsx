@@ -27,7 +27,6 @@ import {
   Building2,
   FilePlus,
   Star,
-  History,
   Settings,
   PlusCircle,
   Loader2,
@@ -83,7 +82,7 @@ export default function Dashboard() {
     const tabParam = urlParams.get("tab");
     
     // Set the active tab if the param exists and is valid
-    if (tabParam && ["settings", "business-profiles", "reviews", "history"].includes(tabParam)) {
+    if (tabParam && ["settings", "business-profiles", "reviews"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, []);
@@ -162,7 +161,6 @@ export default function Dashboard() {
           <h1 className="text-xl font-semibold">
             {activeTab === "business-profiles" && "Business Profiles"}
             {activeTab === "reviews" && "My Reviews"}
-            {activeTab === "history" && "Review History"}
             {activeTab === "settings" && "Account"}
           </h1>
         </header>
@@ -178,10 +176,6 @@ export default function Dashboard() {
             <TabsTrigger value="reviews" className="flex items-center gap-2">
               <Star className="h-4 w-4" />
               <span>My Reviews</span>
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <History className="h-4 w-4" />
-              <span>History</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -381,24 +375,6 @@ export default function Dashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="history">
-            <div className={`flex ${isMobile ? 'justify-end' : 'flex-col sm:flex-row sm:justify-between sm:items-center'} mb-4 gap-3`}>
-              {!isMobile && (
-                <h2 className="text-xl font-semibold">
-                  Review History
-                </h2>
-              )}
-            </div>
-
-            <Card>
-              <CardContent className={`p-6 ${isMobile ? 'py-5 px-4' : ''}`}>
-                <p className={getMobileTextStyles('body', 'text-muted-foreground text-center')}>
-                  Your review history will appear here
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           <TabsContent value="settings">
             <div className={`flex ${isMobile ? 'justify-end' : 'flex-col sm:flex-row sm:justify-between sm:items-center'} mb-4 gap-3`}>
               {!isMobile && (
@@ -583,13 +559,6 @@ export default function Dashboard() {
             >
               <Star className="h-4 w-4" />
               <span className="text-xs mt-1">Reviews</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("history")}
-              className={`flex flex-col items-center justify-center p-2 w-1/5 ${activeTab === "history" ? "text-primary" : "text-muted-foreground"}`}
-            >
-              <History className="h-4 w-4" />
-              <span className="text-xs mt-1">History</span>
             </button>
             <Link href="/" className="w-1/5">
               <div className="flex flex-col items-center justify-center">
