@@ -3,7 +3,7 @@
 **URL:** https://www.ethicalreviewbuilder.com
 **GitHub:** https://github.com/jakelives2026-coder/ethical-review-builder
 **Mission Control:** https://mission-control-two-self.vercel.app
-**Last Updated:** 2026-03-19 (session 3)
+**Last Updated:** 2026-03-19 (session 3 — post-compaction fix)
 
 ---
 
@@ -29,7 +29,7 @@ This file is the anti-compaction memory for ERB. At the start of every new Cowor
 | Hosting | Vercel (CLI deploy: `vercel --prod --force`) |
 | Language | TypeScript throughout |
 
-**Key deployment note:** Vercel is deployed via CLI (`npx vercel --prod --force`), NOT GitHub auto-deploy. Always push to GitHub first, then deploy.
+**Key deployment note:** Vercel GitHub auto-deploy is **permanently disabled** (Ignored Build Step → "Don't build anything", set 2026-03-19). The ONLY way to deploy is `npx vercel --prod --force` from the terminal. `git push` alone will NEVER trigger a deploy.
 
 ---
 
@@ -196,9 +196,14 @@ git log --oneline -5
 ```bash
 git add -A && git commit -m "description" && git push origin main && npx vercel --prod --force
 ```
+Note: `git push` no longer triggers auto-deploy (permanently disabled). The `npx vercel --prod --force` at the end is the actual deploy — it is always required.
 
-### ⚠️ CRITICAL: Stale Bundle Rule
-`git push` auto-deploy stale-bundles `api/index.js` to 3.5MB, silently breaking ALL Express API routes (Google OAuth, review generation, everything). `npx vercel --prod --force` rebuilds clean at ~100KB. **Always force deploy — every single time, no exceptions.**
+### ⚠️ CRITICAL: Deploy Rule
+GitHub auto-deploy is **permanently disabled** in Vercel (set 2026-03-19). `git push` will NEVER trigger a deploy. The only deploy command is:
+```bash
+npx vercel --prod --force
+```
+This always produces a clean ~100KB API bundle. Never use `git push` alone as a deploy method.
 
 ### Self-Improvement Protocol
 1. VERIFY — check live site and code before assuming anything
@@ -241,4 +246,4 @@ Next task to open: Review Delivery Methods (Email/SMS/QR) or Proof Upload UX
 | 2026-03-15 | Review Platforms + Reviewer Reward feature built and deployed |
 | 2026-03-19 | ERB-21 audit complete; fixed UI-019, UI-020, UI-024, UI-025; created this doc |
 | 2026-03-19 (s2) | Fixed Google OAuth (stale bundle from auto-deploy); removed stub History tab (fcc7ef4); added Google OAuth + Resend to state doc; synced all 5 OpenClaw docs to docs/openclaw/ in repo + Cowork outputs folder (commit 027abb0) |
-| 2026-03-19 (s3) | Fixed BUG-007: removed Google Places auto-population of businessService field (commit de0b71a); smoke test 6/6 PASS; Floor Daddy data still needs manual correction via Edit UI |
+| 2026-03-19 (s3) | Fixed BUG-007: removed Google Places auto-population of businessService field (commit de0b71a); smoke test 6/6 PASS; Floor Daddy data still needs manual correction via Edit UI; permanently disabled Vercel GitHub auto-deploy (Ignored Build Step → Don't build anything) |
