@@ -150,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isPrimary: z.boolean().optional().default(false),
         reviewPlatforms: z.array(z.object({
           platformName: z.enum(["google", "yelp", "trustpilot", "bbb"]),
-          platformUrl: z.string().url("Platform URL must be valid"),
+          platformUrl: z.string().url("Platform URL must be valid").or(z.literal("")),
           priorityOrder: z.number().int().min(0)
         })).optional(),
         rewardDescription: z.string().optional(),
@@ -207,7 +207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Review platform and reward fields
         reviewPlatforms: z.array(z.object({
           platformName: z.enum(["google", "yelp", "trustpilot", "bbb"]),
-          platformUrl: z.string().url("Platform URL must be valid"),
+          platformUrl: z.string().url("Platform URL must be valid").or(z.literal("")),
           priorityOrder: z.number().int().min(0)
         })).optional(),
         rewardDescription: z.string().optional(),
