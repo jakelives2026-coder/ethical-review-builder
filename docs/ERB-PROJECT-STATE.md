@@ -124,6 +124,7 @@ See full details in: `ERB-UI-UX-STANDARDS.md`
 | UI-025 | Full address showing instead of City, ST | ✅ Fixed 2026-03-19 |
 | BUG-006 | ?tab=register URL param broken | 🔴 Open (needs logged-out test) |
 | BUG-007 | Google Places auto-populates businessService with wrong type mapping | ✅ Fixed 2026-03-19 |
+| BUG-008 | Saving profile with enabled platform but empty URL returns 400 error | ✅ Fixed 2026-03-19 |
 
 ---
 
@@ -253,4 +254,4 @@ Next task to open: Review Delivery Methods (Email/SMS/QR) or Proof Upload UX
 | 2026-03-15 | Review Platforms + Reviewer Reward feature built and deployed |
 | 2026-03-19 | ERB-21 audit complete; fixed UI-019, UI-020, UI-024, UI-025; created this doc |
 | 2026-03-19 (s2) | Fixed Google OAuth (stale bundle from auto-deploy); removed stub History tab (fcc7ef4); added Google OAuth + Resend to state doc; synced all 5 OpenClaw docs to docs/openclaw/ in repo + Cowork outputs folder (commit 027abb0) |
-| 2026-03-19 (s3) | Fixed BUG-007: removed Google Places auto-population of businessService field (commit de0b71a); smoke test 6/6 PASS; Floor Daddy service corrected to "Flooring Installation and Sales" via Edit UI; permanently disabled Vercel GitHub auto-deploy (Ignored Build Step → Don't build anything, commit 0307480) |
+| 2026-03-19 (s3) | Fixed BUG-007: removed Google Places auto-population of businessService field (commit de0b71a); smoke test 6/6 PASS; Floor Daddy service corrected to "Flooring Installation and Sales" via Edit UI; permanently disabled Vercel GitHub auto-deploy (Ignored Build Step → Don't build anything, commit 0307480); fixed BUG-008: allow empty platformUrl on enabled platforms (commit 27bd985) |
