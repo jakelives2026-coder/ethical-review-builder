@@ -181,6 +181,13 @@ shared/
 
 ## 🧠 WORKFLOW RULES
 
+### ⚠️ MANDATORY: Doc Sync After Every Update
+Whenever ERB-PROJECT-STATE.md or any file in docs/openclaw/ is updated, ALWAYS immediately provide this copy-paste command without waiting to be asked:
+```bash
+cd ~/Projects/ethical-review-builder && cp "/Users/jakelives/Library/Application Support/Claude/local-agent-mode-sessions/92b1eccf-e2c2-44ff-ae6b-c641811f4753/20c71548-9130-4e5b-ad4d-0bb7586671b1/local_7ee715ed-36d3-4a4e-b80c-ef7a0b0c0ab9/outputs/ERB-PROJECT-STATE.md" docs/ERB-PROJECT-STATE.md && git add docs/ERB-PROJECT-STATE.md && git commit -m "docs: update ERB-PROJECT-STATE" && git push origin main
+```
+Never require Jason to ask for this. It is part of every task completion.
+
 ### Cowork vs Claude Code Boundary
 - **Cowork (here):** Auditing, documentation, reading code, planning, creating prompts for Claude Code
 - **Claude Code (terminal):** File edits, commits, deploys — Jason runs commands I provide
