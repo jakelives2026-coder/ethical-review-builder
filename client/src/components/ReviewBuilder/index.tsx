@@ -33,9 +33,13 @@ interface ReviewBuilderProps {
     accentColor?: string | null;
     logoUrl?: string | null;
   };
+  platformInfo?: {
+    platformName: string;
+    platformUrl: string;
+  };
 }
 
-export function ReviewBuilder({ prefillData, branding }: ReviewBuilderProps = {}) {
+export function ReviewBuilder({ prefillData, branding, platformInfo }: ReviewBuilderProps = {}) {
   // Define initial state (with optional prefill)
   const initialState: ReviewData = {
     businessType: prefillData?.businessType || null,

@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { ReviewBuilder } from "@/components/ReviewBuilder";
 import { Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface PublicProfile {
   id: number;
@@ -17,10 +18,57 @@ interface PublicProfile {
   welcomeMessage: string | null;
 }
 
+interface ReviewRequestData {
+  preFilledData: {
+    businessName: string;
+    businessLocation: string;
+    businessService: string;
+    businessType: string | null;
+    representativeName?: string;
+    city?: string;
+    service?: string;
+    contactName?: string;
+    platformName?: string;
+    platformUrl?: string;
+  };
+  businessProfile: PublicProfile;
+}
+
 export default function PublicReview() {
   const params = useParams();
+  const [location] = useLocation();
   const shareSlug = params.shareSlug;
-  
+  const [reviewRequestData, setReviewRequestData] = useState<ReviewRequestData | null>(null);
+  const [platformInfo, setPlatformInfo] = useState<{ platformName: string; platformUrl: string } | undefined>(undefined);
+
+  // Extract token from URL query params
+  const queryParams = new URLSearchParams(location.split("?")[1] || "");
+  const requestToken = queryParams.get("req");
+
+  // Fetch review request data if token is present
+  const { data: requestData, isLoading: isLoadingRequest } = useQuery({
+    queryKey: ["/api/email-review-requests", requestToken],
+    queryFn: async () => {
+      const res = await fetch(`/api/email-review-requests/${requestToken}`);
+      if (!res.ok) {
+        throw new Error("Review request not found or expired");
+      }
+      return res.json();
+    },
+    enabled: !!requestToken,
+    retry: false
+  });
+
+  useEffect(() => {
+    if (requestData) {
+      setReviewRequestData(requestData);
+      setPlatformInfo({
+        platformName: requestData.preFilledData.platformName,
+        platformUrl: requestData.preFilledData.platformUrl
+      });
+    }
+  }, [requestData]);
+
   const { data: profile, isLoading, error } = useQuery<PublicProfile>({
     queryKey: ["/api/public/review", shareSlug],
     queryFn: async () => {
@@ -33,14 +81,14 @@ export default function PublicReview() {
     enabled: !!shareSlug
   });
   
-  if (isLoading) {
+  if (isLoading || isLoadingRequest) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
-  
+
   if (error || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -51,9 +99,21 @@ export default function PublicReview() {
       </div>
     );
   }
-  
+
+  // Determine which prefill data to use (from request or profile)
+  const prefillData = reviewRequestData
+    ? reviewRequestData.preFilledData
+    : {
+        businessName: profile.businessName,
+        businessLocation: profile.businessLocation,
+        businessService: profile.businessService,
+        businessType: profile.businessType as any,
+        services: profile.services || undefined,
+        representativeName: profile.representativeName || undefined
+      };
+
   return (
-    <div 
+    <div
       className="min-h-screen"
       style={{
         background: profile.primaryColor && profile.accentColor
@@ -65,14 +125,14 @@ export default function PublicReview() {
       {(profile.logoUrl || profile.welcomeMessage) && (
         <div className="p-4 text-center border-b bg-white/80 backdrop-blur-sm">
           {profile.logoUrl && (
-            <img 
-              src={profile.logoUrl} 
+            <img
+              src={profile.logoUrl}
               alt={profile.businessName}
               className="h-12 mx-auto mb-2 object-contain"
               onError={(e) => e.currentTarget.style.display = 'none'}
             />
           )}
-          <h1 
+          <h1
             className="text-xl font-bold"
             style={{ color: profile.primaryColor || undefined }}
           >
@@ -86,7 +146,7 @@ export default function PublicReview() {
           {profile.services && (
             <div className="mt-3 flex flex-wrap justify-center gap-1.5 max-w-md mx-auto">
               {profile.services.split(',').map((service, i) => (
-                <span 
+                <span
                   key={i}
                   className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600"
                 >
@@ -97,17 +157,11 @@ export default function PublicReview() {
           )}
         </div>
       )}
-      
+
       {/* Review Builder with pre-filled data */}
-      <ReviewBuilder 
-        prefillData={{
-          businessName: profile.businessName,
-          businessLocation: profile.businessLocation,
-          businessService: profile.businessService,
-          businessType: profile.businessType as any,
-          services: profile.services || undefined,
-          representativeName: profile.representativeName || undefined
-        }}
+      <ReviewBuilder
+        prefillData={prefillData as any}
+        platformInfo={platformInfo}
         branding={{
           primaryColor: profile.primaryColor,
           accentColor: profile.accentColor,

@@ -42,7 +42,8 @@ import {
   Link2,
   Palette,
   MoreHorizontal,
-  Plus
+  Plus,
+  Send
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { 
@@ -54,6 +55,7 @@ import {
 import { BusinessProfileForm } from "@/components/BusinessProfiles/BusinessProfileForm";
 import { ProfileSettingsDialog } from "@/components/BusinessProfiles/ProfileSettingsDialog";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
+import { SendReviewRequestDialog } from "@/components/ReviewRequest/SendReviewRequestDialog";
 
 function shortAddress(full: string): string {
   const parts = full.split(',');
@@ -74,6 +76,8 @@ export default function Dashboard() {
   const [editingProfile, setEditingProfile] = useState<BusinessProfile | null>(null);
   const [settingsProfile, setSettingsProfile] = useState<BusinessProfile | null>(null);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [sendRequestProfile, setSendRequestProfile] = useState<BusinessProfile | null>(null);
+  const [isSendRequestOpen, setIsSendRequestOpen] = useState(false);
   
   // Handle tab selection from URL parameters
   useEffect(() => {
@@ -242,6 +246,18 @@ export default function Dashboard() {
                       >
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 min-w-[72px]"
+                        onClick={() => {
+                          setSendRequestProfile(profile);
+                          setIsSendRequestOpen(true);
+                        }}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Send
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -442,6 +458,17 @@ export default function Dashboard() {
                 currentFullName={user?.fullName}
                 currentCompany={user?.company}
               />
+
+              {sendRequestProfile && (
+                <SendReviewRequestDialog
+                  isOpen={isSendRequestOpen}
+                  onClose={() => {
+                    setIsSendRequestOpen(false);
+                    setSendRequestProfile(null);
+                  }}
+                  businessProfile={sendRequestProfile}
+                />
+              )}
 
               {/* Review Usage Card for Free Users */}
               {user?.planType === "free" && (

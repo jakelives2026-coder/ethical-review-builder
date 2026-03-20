@@ -1708,6 +1708,173 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
     }
   });
 
+  // POST /api/email-review-requests - Create and send email review request
+  app.post("/api/email-review-requests", requireAuth, requireEmailVerified, async (req, res) => {
+    try {
+      const { businessProfileId, recipientEmail, recipientName, platformName, platformUrl, preFilledCity, preFilledService, preFilledContactName } = req.body;
+
+      // Validate required fields
+      if (!businessProfileId || !recipientEmail || !platformName || !platformUrl) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(recipientEmail)) {
+        return res.status(400).json({ error: "Invalid email address" });
+      }
+
+      // Check if business profile belongs to authenticated user
+      const profile = await storage.getBusinessProfile(businessProfileId);
+      if (!profile || profile.userId !== req.user!.id) {
+        return res.status(403).json({ error: "You don't have permission to send requests for this profile" });
+      }
+
+      // Generate 12-char nanoid token
+      const { nanoid } = await import("nanoid");
+      const token = nanoid(12);
+
+      // Set expiration to 30 days from now
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+
+      // Create review request
+      const reviewRequest = await storage.createEmailReviewRequest({
+        businessProfileId,
+        userId: req.user!.id,
+        recipientEmail,
+        recipientName: recipientName || null,
+        platformName,
+        platformUrl,
+        preFilledCity: preFilledCity || null,
+        preFilledService: preFilledService || null,
+        preFilledContactName: preFilledContactName || null,
+        token,
+        status: "pending",
+        expiresAt
+      });
+
+      // Send email via Resend
+      const appUrl = (process.env.APP_URL || "https://ethicalreviewbuilder.com").trim();
+      const reviewLink = `${appUrl}/review/${profile.shareSlug}?req=${token}`;
+      const greeting = recipientName ? `Hi ${recipientName},` : "Hi there,";
+
+      const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
+    .container { max-width: 600px; margin: 20px auto; padding: 40px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .header { margin-bottom: 30px; }
+    .business-name { color: #000; font-size: 18px; font-weight: 600; margin: 0 0 10px 0; }
+    .greeting { color: #333; font-size: 14px; margin: 0 0 20px 0; line-height: 1.5; }
+    .cta-button { display: inline-block; background: #6366f1; color: white; padding: 14px 28px; border-radius: 6px; text-decoration: none; font-weight: 600; margin: 20px 0; }
+    .cta-button:hover { background: #4f46e5; }
+    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #999; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <p class="business-name">${profile.businessName}</p>
+    </div>
+    <p class="greeting">${greeting}</p>
+    <p class="greeting">${profile.businessName} has requested your honest review. It takes less than 2 minutes and makes a real difference!</p>
+    <a href="${reviewLink}" class="cta-button">Leave Your Review →</a>
+    <div class="footer">
+      <p>You received this because ${profile.businessName} values your feedback.</p>
+    </div>
+  </div>
+</body>
+</html>
+      `;
+
+      try {
+        const mailRes = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            from: "Ethical Review Builder <noreply@ethicalreviewbuilder.com>",
+            to: recipientEmail,
+            subject: `${profile.businessName} would love your honest feedback`,
+            html: emailHtml
+          })
+        });
+
+        if (!mailRes.ok) {
+          console.error("Failed to send email via Resend:", await mailRes.text());
+          return res.status(500).json({ error: "Failed to send email" });
+        }
+      } catch (emailError) {
+        console.error("Error sending email:", emailError);
+        return res.status(500).json({ error: "Failed to send email" });
+      }
+
+      res.json({ success: true, token });
+    } catch (error) {
+      console.error("Error creating email review request:", error);
+      res.status(500).json({ error: "Failed to create review request" });
+    }
+  });
+
+  // GET /api/email-review-requests/:token - Get review request details
+  app.get("/api/email-review-requests/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+
+      const reviewRequest = await storage.getEmailReviewRequestByToken(token);
+      if (!reviewRequest) {
+        return res.status(404).json({ error: "Review request not found" });
+      }
+
+      // Check if expired
+      if (new Date() > new Date(reviewRequest.expiresAt)) {
+        return res.status(410).json({ error: "Review request has expired" });
+      }
+
+      // Mark as viewed if still pending
+      if (reviewRequest.status === "pending") {
+        await storage.updateEmailReviewRequestStatus(token, "viewed");
+      }
+
+      // Return pre-fill data
+      const businessProfile = reviewRequest.businessProfile;
+      const preFilledData = {
+        businessName: businessProfile?.businessName,
+        businessLocation: businessProfile?.businessLocation || reviewRequest.preFilledCity,
+        businessService: reviewRequest.preFilledService || businessProfile?.businessService,
+        representativeName: reviewRequest.preFilledContactName || businessProfile?.representativeName,
+        businessType: businessProfile?.businessType,
+        city: reviewRequest.preFilledCity || businessProfile?.businessLocation,
+        service: reviewRequest.preFilledService || businessProfile?.businessService,
+        contactName: reviewRequest.preFilledContactName,
+        platformName: reviewRequest.platformName,
+        platformUrl: reviewRequest.platformUrl,
+        shareSlug: businessProfile?.shareSlug
+      };
+
+      res.json({
+        preFilledData,
+        businessProfile: {
+          id: businessProfile?.id,
+          businessName: businessProfile?.businessName,
+          businessLocation: businessProfile?.businessLocation,
+          businessService: businessProfile?.businessService,
+          businessType: businessProfile?.businessType,
+          shareSlug: businessProfile?.shareSlug
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching email review request:", error);
+      res.status(500).json({ error: "Failed to fetch review request" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

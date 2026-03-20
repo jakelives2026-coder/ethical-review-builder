@@ -3,7 +3,8 @@ import {
   businessProfiles, type BusinessProfile, type InsertBusinessProfile,
   reviews, type Review, type InsertReview,
   reviewTemplates, type ReviewTemplate, type InsertReviewTemplate,
-  reviewRequests, type ReviewRequest, type InsertReviewRequest
+  reviewRequests, type ReviewRequest, type InsertReviewRequest,
+  emailReviewRequests, type EmailReviewRequest, type InsertEmailReviewRequest
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, desc, not } from "drizzle-orm";
@@ -72,6 +73,11 @@ export interface IStorage {
   getReviewRequestByToken(token: string): Promise<(ReviewRequest & { platformName?: string }) | undefined>;
   createReviewRequest(request: InsertReviewRequest): Promise<ReviewRequest>;
   updateReviewRequest(id: number, data: Partial<Omit<ReviewRequest, "id">>): Promise<ReviewRequest | undefined>;
+
+  // Email review request operations
+  createEmailReviewRequest(request: InsertEmailReviewRequest): Promise<EmailReviewRequest>;
+  getEmailReviewRequestByToken(token: string): Promise<(EmailReviewRequest & { businessProfile?: BusinessProfile }) | undefined>;
+  updateEmailReviewRequestStatus(token: string, status: "pending" | "viewed" | "completed"): Promise<EmailReviewRequest | undefined>;
 }
 
 // Ensures the session table and index exist using IF NOT EXISTS so cold starts
@@ -561,6 +567,30 @@ export class DatabaseStorage implements IStorage {
       .where(eq(reviewRequests.id, id))
       .returning();
     return updatedRequest;
+  }
+
+  async createEmailReviewRequest(request: InsertEmailReviewRequest): Promise<EmailReviewRequest> {
+    const [newRequest] = await db.insert(emailReviewRequests).values(request as any).returning();
+    return newRequest;
+  }
+
+  async getEmailReviewRequestByToken(token: string): Promise<(EmailReviewRequest & { businessProfile?: BusinessProfile }) | undefined> {
+    const [request] = await db.select().from(emailReviewRequests)
+      .where(eq(emailReviewRequests.token, token))
+      .limit(1);
+
+    if (!request) return undefined;
+
+    const profile = await this.getBusinessProfile(request.businessProfileId);
+    return { ...request, businessProfile: profile };
+  }
+
+  async updateEmailReviewRequestStatus(token: string, status: "pending" | "viewed" | "completed"): Promise<EmailReviewRequest | undefined> {
+    const [updated] = await db.update(emailReviewRequests)
+      .set({ status })
+      .where(eq(emailReviewRequests.token, token))
+      .returning();
+    return updated;
   }
 }
 

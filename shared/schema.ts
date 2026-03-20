@@ -258,5 +258,49 @@ export const insertReviewRequestSchema = createInsertSchema(reviewRequests).omit
 export type InsertReviewRequest = z.infer<typeof insertReviewRequestSchema>;
 export type ReviewRequest = typeof reviewRequests.$inferSelect;
 
+// Email review requests for sending review requests via email
+export const emailReviewRequests = pgTable("email_review_requests", {
+  id: serial("id").primaryKey(),
+  businessProfileId: integer("business_profile_id").notNull().references(() => businessProfiles.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  recipientEmail: text("recipient_email").notNull(),
+  recipientName: text("recipient_name"), // Optional, used in email greeting
+  platformName: varchar("platform_name", { length: 50 }).notNull(), // google, yelp, trustpilot, bbb
+  platformUrl: text("platform_url").notNull(), // URL to post review to
+  preFilledCity: text("pre_filled_city"), // City from business location
+  preFilledService: text("pre_filled_service"), // Service description
+  preFilledContactName: text("pre_filled_contact_name"), // Contact name at business
+  token: varchar("token", { length: 12 }).notNull().unique(), // 12-char nanoid token
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, viewed, completed
+  expiresAt: timestamp("expires_at").notNull(), // 30 days from creation
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    businessProfileIdIdx: index("email_review_requests_business_profile_id_idx").on(table.businessProfileId),
+    userIdIdx: index("email_review_requests_user_id_idx").on(table.userId),
+    recipientEmailIdx: index("email_review_requests_recipient_email_idx").on(table.recipientEmail),
+    tokenIdx: index("email_review_requests_token_idx").on(table.token),
+  };
+});
+
+export const emailReviewRequestsRelations = relations(emailReviewRequests, ({ one }) => ({
+  businessProfile: one(businessProfiles, {
+    fields: [emailReviewRequests.businessProfileId],
+    references: [businessProfiles.id],
+  }),
+  user: one(users, {
+    fields: [emailReviewRequests.userId],
+    references: [users.id],
+  }),
+}));
+
+export const insertEmailReviewRequestSchema = createInsertSchema(emailReviewRequests).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertEmailReviewRequest = z.infer<typeof insertEmailReviewRequestSchema>;
+export type EmailReviewRequest = typeof emailReviewRequests.$inferSelect;
+
 // Re-export auth models for Replit Auth
 export * from "./models/auth";
