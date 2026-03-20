@@ -347,9 +347,6 @@ export function BusinessProfileForm({ isOpen, onClose, editData, userId }: Busin
                           if (business.formattedAddress) {
                             form.setValue("businessLocation", business.formattedAddress);
                           }
-                          if (business.service) {
-                            form.setValue("businessService", business.service);
-                          }
                         }}
                         placeholder="Search for your business..."
                         defaultValue={field.value}
