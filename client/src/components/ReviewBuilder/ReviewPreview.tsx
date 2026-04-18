@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight, Check, Pencil, InfoIcon, AlertTriangle, Sparkles
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth.tsx";
 import { generateReview } from "@/lib/openai";
-import { BusinessInfo, RelationshipType } from "@/lib/types";
+import { BusinessInfo, RelationshipType, ProjectContext } from "@/lib/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { 
@@ -21,9 +21,10 @@ interface ReviewPreviewProps {
   relationshipType?: RelationshipType;
   businessInfo?: BusinessInfo;
   answers?: string[];
+  projectContext?: ProjectContext;
 }
 
-export function ReviewPreview({ review, onNext, onBack, relationshipType, businessInfo, answers }: ReviewPreviewProps) {
+export function ReviewPreview({ review, onNext, onBack, relationshipType, businessInfo, answers, projectContext }: ReviewPreviewProps) {
   const [editedReview, setEditedReview] = useState(review);
   const [wordCount, setWordCount] = useState(0);
   const [hasFakeName, setHasFakeName] = useState(false);
@@ -206,7 +207,8 @@ export function ReviewPreview({ review, onNext, onBack, relationshipType, busine
         businessService: businessInfo.businessService,
         representativeName: businessInfo.representativeName,
         answers,
-        isSuperReview: true
+        isSuperReview: true,
+        projectContext,
       });
 
       // Complete the progress animation

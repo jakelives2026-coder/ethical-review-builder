@@ -694,7 +694,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate review endpoint (supports both regular and super reviews)
   app.post("/api/generate-review", generateReviewLimiter, async (req, res) => {
     try {
-      const { relationshipType, businessType, serviceLocation, businessName, businessLocation, businessService, representativeName, answers, isSuperReview, userName = '', userId, businessProfileId, templateId } = req.body;
+      const { relationshipType, businessType, serviceLocation, businessName, businessLocation, businessService, representativeName, answers, isSuperReview, userName = '', userId, businessProfileId, templateId, projectContext } = req.body;
       
       // Validate required fields (answers can be 3 or 4 depending on relationship type)
       if (!relationshipType || !businessName || !businessLocation || !businessService || !Array.isArray(answers) || answers.length < 3 || answers.length > 4) {
@@ -749,6 +749,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Build the representative line if a name was provided
       const repLine = representativeName ? `- Representative's name: ${representativeName}` : "";
+
+      // Optional project context from the review request - used as background
+      // reference, NOT as required content. The model must not invent around it.
+      let projectContextBlock = "";
+      if (projectContext && typeof projectContext === "object") {
+        const lines: string[] = [];
+        if (typeof projectContext.city === "string" && projectContext.city.trim()) {
+          lines.push(`- City: ${projectContext.city.trim()}`);
+        }
+        if (Array.isArray(projectContext.services) && projectContext.services.length > 0) {
+          lines.push(`- Services performed: ${projectContext.services.join(", ")}`);
+        }
+        if (Array.isArray(projectContext.areas) && projectContext.areas.length > 0) {
+          lines.push(`- Areas completed: ${projectContext.areas.join(", ")}`);
+        }
+        if (typeof projectContext.materials === "string" && projectContext.materials.trim()) {
+          lines.push(`- Materials installed: ${projectContext.materials.trim()}`);
+        }
+        if (typeof projectContext.summary === "string" && projectContext.summary.trim()) {
+          lines.push(`- Summary: ${projectContext.summary.trim()}`);
+        }
+        if (lines.length > 0) {
+          projectContextBlock = `
+PROJECT CONTEXT (memory prompts provided by the business - NOT things the reviewer necessarily said):
+${lines.join("\n")}
+
+HOW TO USE PROJECT CONTEXT:
+- Treat these as optional memory prompts only, not as facts to assert.
+- Prefer details the reviewer explicitly confirmed in their responses above.
+- If a detail appears ONLY here and the reviewer did not mention or confirm it, use it sparingly or omit it.
+- Never invent specifics (dates, people, outcomes) that appear in neither the reviewer's responses nor this context.
+`;
+        }
+      }
       
       // ============================================
       // BANNED PHRASES - These sound robotic/AI-written
@@ -1083,7 +1117,7 @@ REVIEWER'S RESPONSES:
 1. ${experienceAnswers[0]}
 2. ${experienceAnswers[1]}
 3. ${experienceAnswers[2]}
-
+${projectContextBlock}
 ${meetingLocation ? `MEETING LOCATION CONTEXT:
 The meeting happened "${meetingLocation}". Use this to write the opening naturally:
 - "At my home" → write something like "I had a meeting with [business] at my home in [city]..."
@@ -1103,7 +1137,7 @@ ${bannedPhrases.join(", ")}
 
 FORMAT:
 - Length: ${lengthGuideline}
-- Include business name and location naturally for SEO
+- Only include details explicitly mentioned by the reviewer OR present in the provided project context. Do not invent or assume details.
 ${representativeName ? `- Mention ${representativeName} naturally if appropriate` : ""}
 ${userName && userName.trim() ? `- End with signature: "- ${userName.trim()}"` : "- DO NOT add any name or signature at the end"}
 
@@ -1711,11 +1745,43 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
   // POST /api/email-review-requests - Create and send email review request
   app.post("/api/email-review-requests", requireAuth, requireEmailVerified, async (req, res) => {
     try {
-      const { businessProfileId, recipientEmail, recipientName, platformName, platformUrl, preFilledCity, preFilledService, preFilledContactName } = req.body;
+      const { businessProfileId, recipientEmail, recipientName, platformName, platformUrl, preFilledCity, preFilledService, preFilledContactName, projectContext } = req.body;
 
       // Validate required fields
       if (!businessProfileId || !recipientEmail || !platformName || !platformUrl) {
         return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // Sanitize projectContext — keep only known fields, drop empty values,
+      // cap string lengths, and cap array sizes so we don't store noise.
+      type ProjectContextShape = {
+        city?: string;
+        services?: string[];
+        areas?: string[];
+        materials?: string;
+        summary?: string;
+      };
+      let sanitizedProjectContext: ProjectContextShape | null = null;
+      if (projectContext && typeof projectContext === "object") {
+        const trimStr = (v: unknown, max: number) =>
+          typeof v === "string" ? v.trim().slice(0, max) : "";
+        const trimArr = (v: unknown) =>
+          Array.isArray(v)
+            ? v.map((x) => (typeof x === "string" ? x.trim().slice(0, 100) : "")).filter(Boolean).slice(0, 20)
+            : [];
+        const src = projectContext as Record<string, unknown>;
+        const next: ProjectContextShape = {};
+        const city = trimStr(src.city, 120);
+        const materials = trimStr(src.materials, 250);
+        const summary = trimStr(src.summary, 600);
+        const services = trimArr(src.services);
+        const areas = trimArr(src.areas);
+        if (city) next.city = city;
+        if (services.length > 0) next.services = services;
+        if (areas.length > 0) next.areas = areas;
+        if (materials) next.materials = materials;
+        if (summary) next.summary = summary;
+        if (Object.keys(next).length > 0) sanitizedProjectContext = next;
       }
 
       // Validate email format
@@ -1749,6 +1815,7 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
         preFilledCity: preFilledCity || null,
         preFilledService: preFilledService || null,
         preFilledContactName: preFilledContactName || null,
+        projectContext: sanitizedProjectContext,
         token,
         status: "pending",
         expiresAt
@@ -1860,6 +1927,7 @@ ${isSuperReview ? "This is a SUPER REVIEW - write longer (10-15 sentences) but m
 
       res.json({
         preFilledData,
+        projectContext: reviewRequest.projectContext ?? null,
         businessProfile: {
           id: businessProfile?.id,
           businessName: businessProfile?.businessName,

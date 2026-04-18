@@ -12,7 +12,7 @@ import { ProgressIndicator } from "./ProgressIndicator";
 import { AppointmentStatusScreen } from "./AppointmentStatusScreen";
 import { JobStatusScreen } from "./JobStatusScreen";
 import { RestartButton } from "./RestartButton";
-import { Step, RelationshipType, BusinessType, BusinessInfo, ReviewData, ServiceLocationType } from "@/lib/types";
+import { Step, RelationshipType, BusinessType, BusinessInfo, ReviewData, ServiceLocationType, ProjectContext } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
@@ -37,9 +37,10 @@ interface ReviewBuilderProps {
     platformName: string;
     platformUrl: string;
   };
+  projectContext?: ProjectContext;
 }
 
-export function ReviewBuilder({ prefillData, branding, platformInfo }: ReviewBuilderProps = {}) {
+export function ReviewBuilder({ prefillData, branding, platformInfo, projectContext }: ReviewBuilderProps = {}) {
   // Define initial state (with optional prefill)
   const initialState: ReviewData = {
     businessType: prefillData?.businessType || null,
@@ -385,6 +386,7 @@ export function ReviewBuilder({ prefillData, branding, platformInfo }: ReviewBui
           representativeName: formData.businessInfo.representativeName,
           answers: formData.answers[formData.relationship],
           userName: name !== undefined ? name.trim() : formData.userName,
+          projectContext,
         })
       });
 
@@ -607,6 +609,7 @@ export function ReviewBuilder({ prefillData, branding, platformInfo }: ReviewBui
             relationshipType={formData.relationship}
             businessInfo={formData.businessInfo}
             answers={formData.answers[formData.relationship]}
+            projectContext={projectContext}
           />
         )}
 

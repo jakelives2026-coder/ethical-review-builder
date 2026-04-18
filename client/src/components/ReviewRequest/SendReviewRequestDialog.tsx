@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, KeyboardEvent } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { apiRequest } from "@/lib/queryClient";
@@ -12,14 +12,77 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ChevronDown, AlertCircle, Loader2, Send } from "lucide-react";
+import { AlertCircle, Loader2, Send, X } from "lucide-react";
 import { BusinessProfile } from "@shared/schema";
 
 interface SendReviewRequestDialogProps {
   isOpen: boolean;
   onClose: () => void;
   businessProfile: BusinessProfile;
+}
+
+// Simple inline tag input: press Enter or comma to add, click X to remove.
+function TagInput({
+  id,
+  value,
+  onChange,
+  placeholder,
+}: {
+  id: string;
+  value: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+}) {
+  const [draft, setDraft] = useState("");
+
+  const commit = () => {
+    const next = draft.trim();
+    if (!next) return;
+    if (!value.includes(next)) onChange([...value, next]);
+    setDraft("");
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      commit();
+    } else if (e.key === "Backspace" && draft === "" && value.length > 0) {
+      onChange(value.slice(0, -1));
+    }
+  };
+
+  return (
+    <div className="mt-1.5 rounded-md border bg-background px-2 py-1.5 flex flex-wrap items-center gap-1.5 focus-within:ring-2 focus-within:ring-ring">
+      {value.map((tag) => (
+        <span
+          key={tag}
+          className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
+        >
+          {tag}
+          <button
+            type="button"
+            onClick={() => onChange(value.filter((t) => t !== tag))}
+            aria-label={`Remove ${tag}`}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </span>
+      ))}
+      <input
+        id={id}
+        type="text"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={commit}
+        placeholder={value.length === 0 ? placeholder : ""}
+        className="flex-1 min-w-[120px] bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+      />
+    </div>
+  );
 }
 
 export function SendReviewRequestDialog({
@@ -30,24 +93,36 @@ export function SendReviewRequestDialog({
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showCustomization, setShowCustomization] = useState(false);
 
   // Form state
   const [selectedPlatform, setSelectedPlatform] = useState<string>("");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [recipientName, setRecipientName] = useState("");
-  const [preFilledCity, setPreFilledCity] = useState(
+
+  // Project details (stored as projectContext on the request)
+  const [city, setCity] = useState(
     businessProfile.businessLocation?.split(",")[0]?.trim() || ""
   );
-  const [preFilledService, setPreFilledService] = useState(
-    businessProfile.businessService || ""
-  );
-  const [preFilledContactName, setPreFilledContactName] = useState("");
+  const [services, setServices] = useState<string[]>([]);
+  const [areas, setAreas] = useState<string[]>([]);
+  const [materials, setMaterials] = useState("");
+  const [summary, setSummary] = useState("");
 
   // Get enabled platforms with URLs
   const enabledPlatforms = (businessProfile.reviewPlatforms || []).filter(
     (p) => p.platformUrl && p.platformUrl.trim() !== ""
   );
+
+  const resetForm = () => {
+    setRecipientEmail("");
+    setRecipientName("");
+    setSelectedPlatform("");
+    setCity(businessProfile.businessLocation?.split(",")[0]?.trim() || "");
+    setServices([]);
+    setAreas([]);
+    setMaterials("");
+    setSummary("");
+  };
 
   const handleSubmit = async () => {
     // Validation
@@ -69,7 +144,6 @@ export function SendReviewRequestDialog({
       return;
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(recipientEmail)) {
       toast({
@@ -91,15 +165,28 @@ export function SendReviewRequestDialog({
         throw new Error("Selected platform not found");
       }
 
+      // Build projectContext, dropping empty fields so we don't store noise
+      const projectContext: {
+        city?: string;
+        services?: string[];
+        areas?: string[];
+        materials?: string;
+        summary?: string;
+      } = {};
+      if (city.trim()) projectContext.city = city.trim();
+      if (services.length > 0) projectContext.services = services;
+      if (areas.length > 0) projectContext.areas = areas;
+      if (materials.trim()) projectContext.materials = materials.trim();
+      if (summary.trim()) projectContext.summary = summary.trim();
+      const hasProjectContext = Object.keys(projectContext).length > 0;
+
       const response = await apiRequest("POST", "/api/email-review-requests", {
         businessProfileId: businessProfile.id,
         recipientEmail: recipientEmail.trim(),
         recipientName: recipientName.trim() || undefined,
         platformName: selectedPlatform,
         platformUrl: platform.platformUrl,
-        preFilledCity: preFilledCity.trim() || undefined,
-        preFilledService: preFilledService.trim() || undefined,
-        preFilledContactName: preFilledContactName.trim() || undefined,
+        projectContext: hasProjectContext ? projectContext : undefined,
       });
 
       if (!response.ok) {
@@ -112,11 +199,7 @@ export function SendReviewRequestDialog({
         description: `Email sent to ${recipientEmail}`,
       });
 
-      // Reset form
-      setRecipientEmail("");
-      setRecipientName("");
-      setSelectedPlatform("");
-      setShowCustomization(false);
+      resetForm();
       onClose();
     } catch (error) {
       toast({
@@ -131,7 +214,7 @@ export function SendReviewRequestDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className={isMobile ? "w-[95vw] max-w-md p-4" : "max-w-md"}>
+      <DialogContent className={isMobile ? "w-[95vw] max-w-md p-4 max-h-[90vh] overflow-y-auto" : "max-w-md max-h-[90vh] overflow-y-auto"}>
         <DialogHeader>
           <DialogTitle>Send Review Request</DialogTitle>
           <DialogDescription>
@@ -221,64 +304,75 @@ export function SendReviewRequestDialog({
             </div>
           </div>
 
-          {/* Section C: Customization (Collapsible) */}
+          {/* Section C: Project Details */}
           <div>
-            <button
-              type="button"
-              onClick={() => setShowCustomization(!showCustomization)}
-              className="flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-            >
-              <ChevronDown
-                className={`h-4 w-4 transition-transform ${
-                  showCustomization ? "rotate-180" : ""
-                }`}
-              />
-              Make it even easier for them (optional)
-            </button>
-
-            {showCustomization && (
-              <div className="mt-3 space-y-3 p-3 bg-muted/50 rounded-lg">
-                <div>
-                  <Label htmlFor="pre-filled-city" className="text-sm">
-                    Job Location
-                  </Label>
-                  <Input
-                    id="pre-filled-city"
-                    type="text"
-                    placeholder="e.g. Avondale"
-                    value={preFilledCity}
-                    onChange={(e) => setPreFilledCity(e.target.value)}
-                    className="mt-1.5"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pre-filled-service" className="text-sm">
-                    What you did for them
-                  </Label>
-                  <Input
-                    id="pre-filled-service"
-                    type="text"
-                    placeholder="e.g. vinyl plank flooring installation"
-                    value={preFilledService}
-                    onChange={(e) => setPreFilledService(e.target.value)}
-                    className="mt-1.5"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pre-filled-contact" className="text-sm">
-                    Who helped them
-                  </Label>
-                  <Input
-                    id="pre-filled-contact"
-                    type="text"
-                    placeholder="e.g. Jed and Sergio"
-                    value={preFilledContactName}
-                    onChange={(e) => setPreFilledContactName(e.target.value)}
-                    className="mt-1.5"
-                  />
-                </div>
+            <h3 className="font-semibold text-sm mb-1">Project Details</h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              Notes to help them remember the project. Shown to the reviewer as memory prompts.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="project-city" className="text-sm">
+                  City
+                </Label>
+                <Input
+                  id="project-city"
+                  type="text"
+                  placeholder="e.g. Avondale"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="mt-1.5"
+                />
               </div>
-            )}
+              <div>
+                <Label htmlFor="project-services" className="text-sm">
+                  Services Performed
+                </Label>
+                <TagInput
+                  id="project-services"
+                  value={services}
+                  onChange={setServices}
+                  placeholder="Type and press Enter"
+                />
+              </div>
+              <div>
+                <Label htmlFor="project-areas" className="text-sm">
+                  Areas Completed
+                </Label>
+                <TagInput
+                  id="project-areas"
+                  value={areas}
+                  onChange={setAreas}
+                  placeholder="e.g. kitchen, hallway"
+                />
+              </div>
+              <div>
+                <Label htmlFor="project-materials" className="text-sm">
+                  Materials Installed
+                </Label>
+                <Input
+                  id="project-materials"
+                  type="text"
+                  placeholder="e.g. vinyl plank flooring"
+                  value={materials}
+                  onChange={(e) => setMaterials(e.target.value)}
+                  className="mt-1.5"
+                />
+              </div>
+              <div>
+                <Label htmlFor="project-summary" className="text-sm">
+                  Short Summary
+                </Label>
+                <Textarea
+                  id="project-summary"
+                  placeholder="A sentence or two about the job"
+                  value={summary}
+                  onChange={(e) => setSummary(e.target.value)}
+                  className="mt-1.5"
+                  rows={3}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Submit Button */}

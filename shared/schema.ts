@@ -267,9 +267,17 @@ export const emailReviewRequests = pgTable("email_review_requests", {
   recipientName: text("recipient_name"), // Optional, used in email greeting
   platformName: varchar("platform_name", { length: 50 }).notNull(), // google, yelp, trustpilot, bbb
   platformUrl: text("platform_url").notNull(), // URL to post review to
-  preFilledCity: text("pre_filled_city"), // City from business location
-  preFilledService: text("pre_filled_service"), // Service description
-  preFilledContactName: text("pre_filled_contact_name"), // Contact name at business
+  preFilledCity: text("pre_filled_city"), // City from business location (legacy - kept for backward compatibility)
+  preFilledService: text("pre_filled_service"), // Service description (legacy - kept for backward compatibility)
+  preFilledContactName: text("pre_filled_contact_name"), // Contact name at business (legacy - kept for backward compatibility)
+  // Structured project context used as memory prompts on the review page
+  projectContext: jsonb("project_context").$type<{
+    city?: string;
+    services?: string[];
+    areas?: string[];
+    materials?: string;
+    summary?: string;
+  }>(),
   token: varchar("token", { length: 12 }).notNull().unique(), // 12-char nanoid token
   status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, viewed, completed
   expiresAt: timestamp("expires_at").notNull(), // 30 days from creation

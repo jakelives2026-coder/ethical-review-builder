@@ -82,6 +82,14 @@ export interface ReviewData {
   generatedReview: string;
 }
 
+export interface ProjectContext {
+  city?: string;
+  services?: string[];
+  areas?: string[];
+  materials?: string;
+  summary?: string;
+}
+
 export interface GenerateReviewRequest {
   relationshipType: RelationshipType;
   businessType?: BusinessType;
@@ -92,6 +100,7 @@ export interface GenerateReviewRequest {
   representativeName?: string;
   answers: string[];
   isSuperReview?: boolean;
+  projectContext?: ProjectContext;
 }
 
 export interface GenerateReviewResponse {

@@ -18,6 +18,14 @@ interface PublicProfile {
   welcomeMessage: string | null;
 }
 
+interface ProjectContext {
+  city?: string;
+  services?: string[];
+  areas?: string[];
+  materials?: string;
+  summary?: string;
+}
+
 interface ReviewRequestData {
   preFilledData: {
     businessName: string;
@@ -31,6 +39,7 @@ interface ReviewRequestData {
     platformName?: string;
     platformUrl?: string;
   };
+  projectContext?: ProjectContext | null;
   businessProfile: PublicProfile;
 }
 
@@ -158,10 +167,88 @@ export default function PublicReview() {
         </div>
       )}
 
+      {/* About Your Project - structured memory prompts from the request */}
+      {reviewRequestData?.projectContext &&
+        (reviewRequestData.projectContext.city ||
+          reviewRequestData.projectContext.materials ||
+          reviewRequestData.projectContext.summary ||
+          (reviewRequestData.projectContext.services?.length ?? 0) > 0 ||
+          (reviewRequestData.projectContext.areas?.length ?? 0) > 0) && (
+          <div className="max-w-2xl mx-auto px-4 pt-6">
+            <div className="rounded-lg border bg-white/80 backdrop-blur-sm p-5 shadow-sm">
+              <h2
+                className="text-lg font-semibold mb-1"
+                style={{ color: profile.primaryColor || undefined }}
+              >
+                About your project
+              </h2>
+              <p className="text-xs text-gray-500 mb-4">
+                These notes are provided to help you remember your project. Use anything that feels accurate.
+              </p>
+              <dl className="space-y-3 text-sm">
+                {reviewRequestData.projectContext.city && (
+                  <div className="flex flex-col sm:flex-row sm:gap-3">
+                    <dt className="text-gray-500 sm:w-40 sm:flex-shrink-0">City</dt>
+                    <dd className="text-gray-800">{reviewRequestData.projectContext.city}</dd>
+                  </div>
+                )}
+                {(reviewRequestData.projectContext.services?.length ?? 0) > 0 && (
+                  <div className="flex flex-col sm:flex-row sm:gap-3">
+                    <dt className="text-gray-500 sm:w-40 sm:flex-shrink-0">Services</dt>
+                    <dd className="flex flex-wrap gap-1.5">
+                      {reviewRequestData.projectContext.services!.map((s, i) => (
+                        <span
+                          key={i}
+                          className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                )}
+                {(reviewRequestData.projectContext.areas?.length ?? 0) > 0 && (
+                  <div className="flex flex-col sm:flex-row sm:gap-3">
+                    <dt className="text-gray-500 sm:w-40 sm:flex-shrink-0">Areas completed</dt>
+                    <dd className="flex flex-wrap gap-1.5">
+                      {reviewRequestData.projectContext.areas!.map((a, i) => (
+                        <span
+                          key={i}
+                          className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700"
+                        >
+                          {a}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                )}
+                {reviewRequestData.projectContext.materials && (
+                  <div className="flex flex-col sm:flex-row sm:gap-3">
+                    <dt className="text-gray-500 sm:w-40 sm:flex-shrink-0">Materials installed</dt>
+                    <dd className="text-gray-800">{reviewRequestData.projectContext.materials}</dd>
+                  </div>
+                )}
+                {reviewRequestData.projectContext.summary && (
+                  <div className="flex flex-col sm:flex-row sm:gap-3">
+                    <dt className="text-gray-500 sm:w-40 sm:flex-shrink-0">Summary</dt>
+                    <dd className="text-gray-800 whitespace-pre-wrap">
+                      {reviewRequestData.projectContext.summary}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+              <p className="text-xs text-gray-500 mt-4 border-t pt-3">
+                Please only mention details that match your actual experience.
+              </p>
+            </div>
+          </div>
+        )}
+
       {/* Review Builder with pre-filled data */}
       <ReviewBuilder
         prefillData={prefillData as any}
         platformInfo={platformInfo}
+        projectContext={reviewRequestData?.projectContext ?? undefined}
         branding={{
           primaryColor: profile.primaryColor,
           accentColor: profile.accentColor,
