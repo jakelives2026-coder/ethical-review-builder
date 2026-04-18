@@ -51,8 +51,7 @@ export default function PublicReview() {
   const [platformInfo, setPlatformInfo] = useState<{ platformName: string; platformUrl: string } | undefined>(undefined);
 
   // Extract token from URL query params
-  const queryParams = new URLSearchParams(location.split("?")[1] || "");
-  const requestToken = queryParams.get("req");
+  const requestToken = new URLSearchParams(window.location.search).get("req");
 
   // Fetch review request data if token is present
   const { data: requestData, isLoading: isLoadingRequest } = useQuery({
