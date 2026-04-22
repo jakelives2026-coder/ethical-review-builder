@@ -9,3 +9,4 @@ vite.config.ts.*
 .env*.local
 api/index.js
 .env.vercel
+.claude/
